@@ -3,6 +3,7 @@ error_log
 .htaccess
 sitemap.xml
 sitemap.xml.gz
+certificates
 wp-config.php
 wp-content/updraft
 wp-content/advanced-cache.php
