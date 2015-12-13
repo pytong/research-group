@@ -495,6 +495,77 @@ function amt_admin_help_tabs() {
         'content'	=> $help_text,
     ) );
 
+    // Metadata caching
+    $help_text = '
+    <p>'.__('This section contains information about how Add-Meta-Tags can cache the generated metadata, which can result in slightly faster page load times.', 'add-meta-tags').'</p>
+
+    <p>'.__('Metadata caching should be the last thing that should bother you while configuring this plugin. You should consider enabling it only after you have finished configuring the rest of the settings.', 'add-meta-tags').'</p>
+
+    <p>'.__('If you are here to troubleshoot a problem you have encountered with metadata caching, please head down to the <em>Troubleshooting</em> section for quick tips.', 'add-meta-tags').'</p>
+
+    <h3>'.__('Notice', 'add-meta-tags').'</h3>
+
+    <p>'.__('Metadata caching is an experimental feature, which should only be used by experienced WordPress users. If you are a WordPress beginner or if you don\'t have enough knowledge about the concept of caching and, especially, if you have followed instructions without having understood how this works, please keep this feature turned off, read this section of the documentation carefully and ask any questions you might have before enabling it. Even if you do otherwise, your web site is not going to be harmed in any way, but it is always a good idea to have a good understanding how things work.', 'add-meta-tags').'</p>
+
+    <h3>'.__('Show timing information', 'add-meta-tags').'</h3>
+
+    <p>'.__('If this option is enabled, information about the total time that was required to generate a block of metadata is printed. This feature, generally, should not be enabled, unless you want an indication of the metadata generation times in each request.', 'add-meta-tags').'</p>
+
+    <p>'.__('Make no mistake, the printed timings are not a benchmark, but rather very rough indicators about how Add-Meta-Tags performs in your specific environment. Moreover, these timings may differ very much, even in consequent loadings of the same web page. This happens because other factors such as the server\'s load play a determinant role on how WordPress performs. In general, timings you get on live web sites, in shared hosting environments, on virtual servers with shared resources or even on dedicated boxes on which, apart from the web server, other production services run, are not going to be consistent. This is not a problem of the plugin and there is absolutely nothing that can be done about it.', 'add-meta-tags').'</p>
+
+    <h3>'.__('Enable metadata caching', 'add-meta-tags').'</h3>
+
+    <p>'.__('Metadata caching can be enabled by setting the number of seconds, for which the metadata should be cached, to a number greater than zero.', 'add-meta-tags').'</p>
+
+    <p>'.__('Metadata generation requires some system resources. By caching the generated metadata, the plugin does not have to regenerated it in subsequent requests, but, instead, use the same cached metadata until it expires. If this feature has been enabled, Add-Meta-Tags caches the metadata using the WordPress <em>Transients API</em>, which is meant to be used to store temporary data that expires inside the WordPress database for quick access. No extra database tables are created for this purpose. WordPress itself already uses the Transients API for similar purposes.', 'add-meta-tags').'</p>
+
+    <p>'.__('Obviously, metadata caching comes at the cost of some storage space in your database, which raises the question "<em>Should I use it?</em>". Unfortunately, there is no clear answer to this question, but it depends on many factors. In general, low or mid traffic web sites would see very little benefit by using metadata caching. On the contrary, on high traffic web sites, on which WordPress has to load on every request, every millisecond counts and in this case the benefits can be great. On the other hand, regardless of the amount of web traffic, in case a caching proxy server or a content delivery network (CDN) is used in front of your WordPress driven web site or if a plugin that produces static versions of your dynamic web pages is in effect, the benefits of metadata caching are minimal. In fact, in such cases caching metadata should rather be considered as waste of even the little storage space that is used, than a performance boost. Additionally, in very large multi-site WordPress installations, on which the superadmin does not have full control over the various blogs, metadata caching could lead to unexpected results in terms of storage space usage by the database.', 'add-meta-tags').'</p>
+
+    <p>'.__('You should always keep in mind that this feature exists only for those who judge that they need it. There is no general rule that applies to all cases. Enabling it should result is slightly better page loading times in several cases.', 'add-meta-tags').'</p>
+
+    <h3>'.__('How it works', 'add-meta-tags').'</h3>
+
+    <p>'.__('At this time, metadata can be cached only for content pages (posts, pages, attachments, custom post types, products, etc), but not for archives or other custom content. This happens because metadata generation for archives is not expensive in terms of system resources, but more importantly because more research needs to be done to determine whether such a feature could be abused.', 'add-meta-tags').'</p>
+
+    <p>'.__('If metadata caching has been enabled, Add-Meta-Tags, before attempting to generate a new metadata block, checks whether a cached metadata block, which has not expired, already exists. If such a cached block is found, then it is used as is.', 'add-meta-tags').'</p>
+
+    <p>'.__('If a post, for which metadata has been cached, is edited, then automatic purging of the cached metadata takes place. Add-Meta-Tags will generate a fresh metadata block the next time the post\'s page is visited. Moreover, every time you save the plugin settings, all cached metadata entries are automatically purged in order to avoid using stale metadata which has not been generated according to the plugin settings that are in effect. This is by design.', 'add-meta-tags').'</p>
+
+    <p>'.__('Another useful technical note is that WordPress keeps expired transient data in the database until it is requested again. The transient data is not automatically removed by scheduled clean-up jobs. This is by WordPress design. Read on to find out how Add-Meta-Tags clears cached metadata automatically and how to manually clear it yourself.', 'add-meta-tags').'</p>
+
+    <h3>'.__('Clearing the cached metadata', 'add-meta-tags').'</h3>
+
+    <p>'.__('In order to clear the cached metadata, you have two options. One is by simply saving the plugin options, as explained above, and the other is to use the <code>amt clean cache</code> command of <code>wp-cli</code> on the command line.', 'add-meta-tags').'</p>
+
+    <h3>'.__('How many seconds should metadata be cached for?', 'add-meta-tags').'</h3>
+
+    <p>'.__('Since you are the one who knows the details of your environment and the general configuration of your web site, this is your call. Setting the caching timeout to 60, 300, 86400 (a day), 604800 (a week) or whatever is totally up to you.', 'add-meta-tags').'</p>
+
+    <h3>'.__('Troubleshooting', 'add-meta-tags').'</h3>
+
+    <p>'.__('In case you are getting unexpected metadata in your pages, here are a few things you can try in order to troubleshoot.', 'add-meta-tags').'</p>
+
+    <p>'.__('<em>Pro tip</em>: before checking the HTML source code of the page, please make sure you have cleared your browser\'s cache to prevent it from getting in the way. Alternatively, you can hard refresh the web page, for instance by pressing <code>Ctrl-F5</code> in Firefox or Chrome.', 'add-meta-tags').'</p>
+
+    <p>'.__('First, turn off metadata caching in the Add-Meta-Tags settings. This can be done by setting the number of seconds to cache metadata to zero and save the settings. Saving the settings also automatically purges the metadata cache.', 'add-meta-tags').'</p>
+
+    <p>'.__('If you are still seeing wrong metadata in the HTML source, then the metadata caching feature of the Add-Meta-Tags plugin is not the cause of the problem. If you use a caching proxy server, a CDN, a caching plugin for WordPress, please make sure to purge their caches and ask for help in their support channels.', 'add-meta-tags').'</p>
+
+    <h3>'.__('Further reading', 'add-meta-tags').'</h3>
+
+    <p>'.__('Many new features and improvements have been implemented in Add-Meta-Tags during the last years. All these implementations have slightly increased the time that is required to generate the relevant metadata. Several code optimizations have been planned for the future.', 'add-meta-tags').'</p>
+
+    <p>'.__('In the meantime, check the <a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Performance">Performance section</a> of the technical documentation. (currently, work in progress)', 'add-meta-tags').'</p>
+
+    ';
+    if ( apply_filters('amt_enable_metadata_cache', true) ) {
+        $screen->add_help_tab( array(
+            'id'	=> 'amt_help_metadata_caching',
+            'title'	=> __('Metadata caching', 'add-meta-tags'),
+            'content'	=> $help_text,
+        ) );
+    }
+
     // Advanced Customization
     $help_text = '
     <p>'.__('Add-Meta-Tags can be customized to a great extent programmatically. Please read the <a href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Add-Meta-Tags_Cookbook" target="_blank">Add-Meta-Tags Cookbook</a> for more information.', 'add-meta-tags').'</p>
@@ -524,9 +595,16 @@ function amt_options_page() {
 
         // Save the Add-Meta-Tags settings
         amt_save_settings($_POST);
+
         // Also, since it may happen that the rewrite rules have not been flushed
         // this is a good place to do it.
         flush_rewrite_rules();
+
+        // Also, clear the metadata cache automatically on every save.
+        $result = amt_delete_all_transient_metadata_cache();
+        if ( intval($result) > 0 ) {
+            amt_show_info_msg( sprintf(__('Deleted %d transient metadata cache entries.', 'add-meta-tags'), $result) );
+        }
 
     } elseif (isset($_POST["info_reset"])) {
 
@@ -906,7 +984,7 @@ function amt_options_page() {
                 <br />
 
                 <input id="schemaorg_force_jsonld" type="checkbox" value="1" name="schemaorg_force_jsonld" '. (($options["schemaorg_force_jsonld"]=="1") ? 'checked="checked"' : '') .'" />
-                <label for="schemaorg_force_jsonld">'.__('Enforce the generation of schema.org metadata as JSON-LD data.', 'add-meta-tags').'</label> (<span style="color:red;">'.__('Experimental feature', 'add-meta-tags').'</span>)
+                <label for="schemaorg_force_jsonld">'.__('Enforce the generation of schema.org metadata as JSON-LD data.', 'add-meta-tags').'</label>
                 <br />
 
             </fieldset>
@@ -1056,7 +1134,6 @@ function amt_options_page() {
                 <label for="enable_advanced_title_management">
                 '.__('Enable advanced title management.', 'add-meta-tags').'
                 (<a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Advanced_Title_Management">'.__('Learn more', 'add-meta-tags').'</a>)
-                (<span style="color:red;">'.__('Experimental feature', 'add-meta-tags').'</span>)
                 </label>
 
                 <br />
@@ -1157,7 +1234,7 @@ function amt_options_page() {
 
                 <p><input id="extended_support_buddypress" type="checkbox" value="1" name="extended_support_buddypress" '. (($options["extended_support_buddypress"]=="1") ? 'checked="checked"' : '') .'" />
                 <label for="extended_support_buddypress">
-                '.__('Metadata for BuddyPress.', 'add-meta-tags').' (<span style="color:red;">'.__('Work in progress', 'add-meta-tags').'</span>)
+                '.__('Metadata for BuddyPress profiles.', 'add-meta-tags').'
                 </label></p>
 
                 <p><input id="extended_support_bbpress" type="checkbox" value="1" name="extended_support_bbpress" '. (($options["extended_support_bbpress"]=="1") ? 'checked="checked"' : '') .'" />
@@ -1174,7 +1251,40 @@ function amt_options_page() {
             </fieldset>
             </td>
             </tr>
+    ');
 
+
+    // Metadata Caching
+
+    if ( apply_filters('amt_enable_metadata_cache', true) ) {
+        print('
+            <tr valign="top">
+            <th scope="row">'.__('Metadata Caching', 'add-meta-tags').'</th>
+            <td>
+            <fieldset>
+                <legend class="screen-reader-text"><span>'.__('Metadata Caching', 'add-meta-tags').'</span></legend>
+
+                <input id="enable_timings" type="checkbox" value="1" name="enable_timings" '. (($options["enable_timings"]=="1") ? 'checked="checked"' : '') .'" />
+                <label for="enable_timings">'.__('Show timing information.', 'add-meta-tags').'</label>
+                <br /><br />
+
+                <label for="transient_cache_expiration">'.__('Cache metadata for this number of seconds:', 'add-meta-tags').'</label>
+                <input id="transient_cache_expiration" type="text" name="transient_cache_expiration" value="' . esc_attr( $options["transient_cache_expiration"] ) . '" size="10" maxlength="16" class="code" /> (<span style="color:red;">'.__('Experimental feature', 'add-meta-tags').'</span>)
+                <br /><br />
+
+                <p>'.__('Currently, <strong style="color: green;">' . esc_attr( amt_count_transient_metadata_cache_entries() ) . '</strong> metadata blocks have been cached. All cached entries are automatically purged every time these settings are saved.', 'add-meta-tags').'</p>
+                <br />
+
+                <p>'.__('Metadata caching is an advanced feature and should only be used after you have read and fully understood the <em>Metadata caching</em> section of the integrated help.', 'add-meta-tags').'</p>
+                <br />
+
+            </fieldset>
+            </td>
+            </tr>
+        ');
+    }
+
+    print('
             <tr valign="top">
             <th scope="row">'.__('Donations', 'add-meta-tags').'</th>
             <td>
@@ -1198,13 +1308,22 @@ function amt_options_page() {
                 <th scope="row">
                     <input id="submit" class="button-primary" type="submit" value="'.__('Save Changes', 'add-meta-tags').'" name="info_update" />
                 </th>
+
                 <th scope="row">
                     <input id="reset" class="button-primary" type="submit" value="'.__('Reset to defaults', 'add-meta-tags').'" name="info_reset" />
                 </th>
+
                 <th></th><th></th><th></th><th></th>
             </tr>
         </tbody>
         </table>
+
+        <br /><br /><br />
+
+        <h2 class="title">'.__('Notes', 'add-meta-tags').'</h2>
+
+        <p>'.__('More management tools are available via the <code>amt</code> command of <code>wp-cli</code>. Learn more about the <a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Command_Line_Interface">Add-Meta-Tags command line interface</a>.', 'add-meta-tags').'</p>
+
 
         </form>
         
