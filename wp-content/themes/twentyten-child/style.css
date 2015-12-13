@@ -12,19 +12,23 @@
  *  Text Domain:  twenty-ten-child
  */
 
+body.page {
+        background-color: #ddd;
+} 
+
 *, *:before, *after {box-sizing:  border-box !important;}
 
 .row {
-         -moz-column-width: 900px;
-         -webkit-column-width: 900px;
-         -moz-column-gap: 5px;
-         -webkit-column-gap: 5px; 
+       -moz-column-width: 900px;
+       -webkit-column-width: 900px;
+       -moz-column-gap: 5px;
+       -webkit-column-gap: 5px; 
 }
 
 .item {
-        display: inline-block;
-        padding: 10px 0;
-        width: 100%; 
+       display: inline-block;
+       padding: 10px 0;
+       width: 100%; 
 }
 
 .item img {
