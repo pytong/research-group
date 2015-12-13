@@ -12,6 +12,25 @@
  *  Text Domain:  twenty-ten-child
  */
 
+*, *:before, *after {box-sizing:  border-box !important;}
+
+.row {
+         -moz-column-width: 900px;
+         -webkit-column-width: 900px;
+         -moz-column-gap: 5px;
+         -webkit-column-gap: 5px; 
+}
+
+.item {
+        display: inline-block;
+        padding: 10px 0;
+        width: 100%; 
+}
+
+.item img {
+   //     height: 320px;
+}
+
 .twitter-follow {
 	line-height: 60px;
 }
