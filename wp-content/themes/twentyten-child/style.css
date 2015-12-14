@@ -12,10 +12,9 @@
  *  Text Domain:  twenty-ten-child
  */
 
-// page width
 
 body #main {
-  padding: 0;
+  padding-top: 1.5em;
 }
 
 body.page {
@@ -42,7 +41,13 @@ div[class*="col-"] {
   text-align: justify;
 }
 
+
+/*************************************
+ * Contact Page
+ *************************************/
+
 .contact-details {
+  width: 100%;
   font-size: 1.1em;
 }
 
@@ -56,8 +61,8 @@ div[class*="col-"] {
 }
 
 .at-email {
-  width: 1em;
-  height: 1em;
+  width: 0.8em;
+  height: 0.8em;
 }
 
 .organic-electronics {
@@ -66,7 +71,33 @@ div[class*="col-"] {
 
 .chemistry-building {
   margin: 2em auto 0.5em auto;
-  width: 80%;
+  width: 75%;
+}
+
+/*************************************
+ * Photos Page
+ *************************************/
+
+.photo {
+  padding: 0.5em;
+  width: 100%;
+}
+
+/*************************************
+ * Members Page
+ *************************************/
+
+.member-photo {
+  width: 11em;
+  height: auto;
+}
+
+/*************************************
+ * Resources Page
+ *************************************/
+
+.resource-link {
+  margin: 2em 0;
 }
 
 
@@ -104,10 +135,6 @@ div[class*="col-"] {
 .members img {
 	width: 150px;
 	height: 150px;
-}
-
-.member-details {
-	margin-top: 15px;
 }
 
 .funding-agencies {
