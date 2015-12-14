@@ -53,6 +53,11 @@ div[class*="col-"] {
   margin-bottom: 1.5em;
 }
 
+.at-email {
+  width: 1em;
+  height: 1em;
+}
+
 .organic-electronics {
   width: 100%;
 }
@@ -61,6 +66,7 @@ div[class*="col-"] {
   margin: 2em auto 0.5em auto;
   width: 80%;
 }
+
 
 // Customizations
 
