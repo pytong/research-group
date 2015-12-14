@@ -12,12 +12,14 @@
  *  Text Domain:  twenty-ten-child
  */
 
-body.page {
-  background-color: #ddd;
-} 
+// page width
 
 body #main {
   padding: 0;
+}
+
+body.page {
+  background-color: #ddd;
 }
 
 #content .entry-content h1, #content .entry-content h2,
