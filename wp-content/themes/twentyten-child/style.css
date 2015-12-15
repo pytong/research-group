@@ -13,12 +13,17 @@
  */
 
 
+
 body #main {
   padding-top: 1.5em;
 }
 
 body.page {
   background-color: #ddd;
+}
+
+#header #branding img, #header #access {
+//  max-width: 900px;
 }
 
 #content .entry-content h1, #content .entry-content h2,
@@ -86,7 +91,6 @@ div[class*="col-"] {
 /*************************************
  * Members Page
  *************************************/
-
 .member-photo {
   width: 11em;
   height: auto;
@@ -98,6 +102,12 @@ div[class*="col-"] {
 
 .resource-link {
   margin: 2em 0;
+}
+
+.contact-details {
+  width: 260px;
+  margin: -285px 10px 0 0;
+  float: right;
 }
 
 
