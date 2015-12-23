@@ -59,19 +59,28 @@ div[class*="col-"] {
   float: left;
   display: inline-block;
   margin-top: 15px;
-  margin-right: 15px;
+  margin-right: 10px;
 }
 
 .instagram-follow {
   float: left;
-  margin: 15px;
-  border-radius: 5px;
-  padding: 1px 10px;
-  background-color: #4D7C9F;
+  margin: 15px 10px;
+  border-radius: 3px;
+  padding: 0 10px;
+  background-color: #5180A4;
 }
 
-.instagram-follow a {
-  color: #E3ECF1;
+.instagram-follow:hover {
+  background-color: #406C92;
+}
+
+.instagram-follow a:active,
+.instagram-follow a:hover,
+.instagram-follow a:visited,
+.instagram-follow a:link {
+  text-decoration: none;
+  color: #DEE8EF;
+  font-size: 12px;
 }
 
 .home-slider {
