@@ -22,6 +22,10 @@ body.page {
   background-color: #ddd;
 }
 
+a:link, a:visited, a:hover, a:active {
+  text-decoration: none;
+}
+
 #header #branding img, #header #access {
 //  max-width: 900px;
 }
@@ -46,6 +50,33 @@ div[class*="col-"] {
   text-align: justify;
 }
 
+
+/*************************************
+ * Home Page
+ *************************************/
+
+.twitter-follow {
+  float: left;
+  display: inline-block;
+  margin-top: 15px;
+  margin-right: 15px;
+}
+
+.instagram-follow {
+  float: left;
+  margin: 15px;
+  border-radius: 5px;
+  padding: 1px 10px;
+  background-color: #4D7C9F;
+}
+
+.instagram-follow a {
+  color: #E3ECF1;
+}
+
+.home-slider {
+  float: left;
+}
 
 /*************************************
  * Contact Page
@@ -129,10 +160,6 @@ div[class*="col-"] {
 
 .item img {
    //     height: 320px;
-}
-
-.twitter-follow {
-	line-height: 60px;
 }
 
 #content .members {
@@ -257,10 +284,6 @@ div[class*="col-"] {
 	margin-top: -10px;
 	float: left;
 	width: 250px;
-}
-
-.home-slider {
-	margin-left: 250px;
 }
 
 .research-areas-image.wp-image-395 {
