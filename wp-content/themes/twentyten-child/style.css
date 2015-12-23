@@ -60,9 +60,8 @@ div[class*="col-"] {
   margin: 0.3em 0;
 }
 
-.contact-details .phone-and-email {
-  margin-top: 1.5em;
-  margin-bottom: 1.5em;
+.contact-details, .entry-content * .phone-and-email {
+  margin: 20px 0;
 }
 
 .at-email {
@@ -75,8 +74,8 @@ div[class*="col-"] {
 }
 
 .chemistry-building {
-  margin: 2em auto 0.5em auto;
-  width: 75%;
+  margin: -65px auto 0.5em auto;
+  width: 80%;
 }
 
 /*************************************
