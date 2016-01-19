@@ -29,7 +29,7 @@
 				<a href="<?php echo home_url( '/' ); ?>" title="<?php echo esc_attr( get_bloginfo( 'name', 'display' ) ); ?>" rel="home">
 					<?php bloginfo( 'name' ); ?>
 				</a>
-				<div class="copyright">Copyright © 2015 by Prof. Julian Chan. All rights reserved.</div>
+				<div class="copyright">Copyright © 2015-2016 by Prof. Julian Chan. All rights reserved.</div>
 			<div id="site-generator">
 				<?php
 				/**
