@@ -54,7 +54,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function amt_get_default_options() {
     return array(
-        "settings_version"  => 18,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
+        "settings_version"  => 19,       // IMPORTANT: SETTINGS UPGRADE: Every time settings are added or removed this has to be incremented.
         "site_description"  => "",      // Front page description
         "site_keywords"     => "",      // Front page keywords
         "global_keywords"   => "",      // These keywords are added to the 'keywords' meta tag on all posts and pages
@@ -108,6 +108,8 @@ function amt_get_default_options() {
         "enable_timings"    => "0",
         "transient_cache_expiration"    => "0", // Not check box
         "review_mode"       => "0",
+        "review_mode_metadata_report"   => "0",
+        "omit_vendor_html_comments"     => "0",
         "i_have_donated"    => "0",
         );
 }
@@ -247,6 +249,10 @@ function amt_plugin_upgrade() {
     // Added "transient_cache_expiration"
     // No migrations required. Addition takes place in (1).
 
+    // Version 2.10.6 (settings_version 18->19)
+    // Added "review_mode_metadata_report"
+    // Added "omit_vendor_html_comments"
+    // No migrations required. Addition takes place in (1).
 
     // 3) Clean stored options.
     foreach ($stored_options as $opt => $value) {

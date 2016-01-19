@@ -201,16 +201,18 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         // Scope BEGIN: Organization: http://schema.org/Organization
         $metadata_arr[] = '<!-- Scope BEGIN: Organization -->';
         //$metadata_arr[] = '<span itemprop="mainEntity" itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . '>';
-        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . '>';
+        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . amt_get_schemaorg_entity_id_as_itemid('organization') . '>';
         // Get publisher/mainEntity metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_publisher_metatags( $options ) );
+        // mainEntityOfPage
+        $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
         // Scope END: Organization
         $metadata_arr[] = '</span> <!-- Scope END: Organization -->';
 
         // WebSite
         // Scope BEGIN: WebSite: http://schema.org/WebSite
         $metadata_arr[] = '<!-- Scope BEGIN: WebSite -->';
-        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/WebSite">';
+        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/WebSite"' . amt_get_schemaorg_entity_id_as_itemid('website') . '>';
         // name
         $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
         // headline - contains title information
@@ -220,6 +222,9 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         //$metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
         // url
         $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
+
+        // publisher
+//        $metadata_arr[] = '<link itemprop="publisher" href="' . esc_attr( amt_get_schemaorg_entity_id('organization') ) . '" />';
 
         // SearchAction
         // Scope BEGIN: SearchAction: http://schema.org/SearchAction
@@ -257,9 +262,11 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
             // Author
             // Scope BEGIN: Person: http://schema.org/Person
             $metadata_arr[] = '<!-- Scope BEGIN: Person -->';
-            $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person"' . amt_get_schemaorg_itemref('person_author') . '>';
+            $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person"' . amt_get_schemaorg_itemref('person_author') . amt_get_schemaorg_entity_id_as_itemid('person') . '>';
             // Get author metatags
             $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_author_metatags( $post->post_author, $options ) );
+            // mainEntityOfPage
+            $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
             // Scope END: Person
             $metadata_arr[] = '</span> <!-- Scope END: Person -->';
 
@@ -269,9 +276,11 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
             // Scope BEGIN: Organization: http://schema.org/Organization
             $metadata_arr[] = '<!-- Scope BEGIN: Organization -->';
             //$metadata_arr[] = '<span itemprop="mainEntity" itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . '>';
-            $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . '>';
+            $metadata_arr[] = '<span itemscope itemtype="http://schema.org/Organization"' . amt_get_schemaorg_itemref('organization') . amt_get_schemaorg_entity_id_as_itemid('organization') . '>';
             // Get publisher/mainEntity metatags
             $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_publisher_metatags( $options ) );
+            // mainEntityOfPage
+            $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
             // Scope END: Organization
             $metadata_arr[] = '</span> <!-- Scope END: Organization -->';
         }
@@ -279,7 +288,7 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         // WebSite
         // Scope BEGIN: WebSite: http://schema.org/WebSite
         $metadata_arr[] = '<!-- Scope BEGIN: WebSite -->';
-        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/WebSite">';
+        $metadata_arr[] = '<span itemscope itemtype="http://schema.org/WebSite"' . amt_get_schemaorg_entity_id_as_itemid('website') . '>';
         // name
         $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
         // headline - contains title information
@@ -289,6 +298,14 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         //$metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . '" />';
         // url
         $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( trailingslashit( get_bloginfo('url') ) ) . '" />';
+
+//        if ( $options['author_profile_source'] == 'frontpage' ) {
+            // author
+    //        $metadata_arr[] = '<link itemprop="author" href="' . esc_attr( amt_get_schemaorg_entity_id('person') ) . '" />';
+//        } else {
+            // publisher
+    //        $metadata_arr[] = '<link itemprop="publisher" href="' . esc_attr( amt_get_schemaorg_entity_id('organization') ) . '" />';
+//        }
 
         // SearchAction
         // Scope BEGIN: SearchAction: http://schema.org/SearchAction
@@ -342,6 +359,9 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         // Get author metatags
         $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_author_metatags( $author->ID, $options ) );
 
+        // mainEntityOfPage
+        $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url( get_author_posts_url( $author->ID ) ) . '" />';
+
         // Scope END: Person
         $metadata_arr[] = '</span> <!-- Scope END: Person -->';
 
@@ -369,9 +389,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
     // Get the options the DB
     $options = get_option("add_meta_tags_opts");
     // Get current post object
-    $post = get_queried_object();
-    // Allow filtering of the $post object.
-    $post = apply_filters('amt_get_queried_object', $post, $options);
+    $post = amt_get_queried_object($options);
     // Caching indicator
     $is_cached = 'no';
 
@@ -381,15 +399,45 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         if ( ! empty($cached_content_metadata_arr) ) {
             $is_cached = 'yes';
 
-            // Add our comment
-            array_unshift( $cached_content_metadata_arr, "<!-- BEGIN Schema.org microdata added by Add-Meta-Tags WordPress plugin -->" );
-            array_unshift( $cached_content_metadata_arr, "" );   // Intentionaly left empty
             // For AMT timings
             if ( $options['enable_timings'] == '1' ) {
-                $cached_content_metadata_arr[] = sprintf( '<!-- Add-Meta-Tags Timings (milliseconds) - Block total time: %.3f msec - Cached: %s -->', (microtime(true) - $t) * 1000, $is_cached );
+                array_unshift( $cached_content_metadata_arr, sprintf( '<!-- Add-Meta-Tags Timings (milliseconds) - Block total time: %.3f msec - Cached: %s -->', (microtime(true) - $t) * 1000, $is_cached ) );
             }
-            array_push( $cached_content_metadata_arr, "<!-- END Schema.org microdata added by Add-Meta-Tags WordPress plugin -->" );
+
+            // Add our comment
+            if ( $options["omit_vendor_html_comments"] == "0" ) {
+                array_unshift( $cached_content_metadata_arr, "<!-- BEGIN Schema.org microdata added by the Add-Meta-Tags WordPress plugin -->" );
+            }
+            array_unshift( $cached_content_metadata_arr, "" );   // Intentionaly left empty
+            if ( $options["omit_vendor_html_comments"] == "0" ) {
+                array_push( $cached_content_metadata_arr, "<!-- END Schema.org microdata added by the Add-Meta-Tags WordPress plugin -->" );
+            }
             array_push( $cached_content_metadata_arr, "" );   // Intentionaly left empty
+
+            //
+            // Non persistent cache for metadata review mode.
+            //
+            // The review mode's content filter should have bigger priority than this
+            // filter (be executed after this one). This one by default has priority 9999
+            // while the review mode filter has priority of 10000
+            if ( amt_check_run_metadata_review_code($options) ) {
+                // What happens here is this: we copy the metadata array and remove the
+                // item that contains the content data, because it is not needed for
+                // metadata review.
+                // Then use non-persistent cache to store this new array.
+                // Metadata Review mode's filtering function should be attached with a
+                // priority bigger than this one, so that it is executed after this one.
+                // There the data is loaded from the non-persistent cache.
+                // This way, the timings are the same as in the source code and also
+                // it is more efficient from a resources perspective.
+                // WARNING: in order to work fine, set correct filter priorities.
+                $metadata_arr_for_review = $cached_content_metadata_arr;
+                if ( array_key_exists('content_data', $metadata_arr_for_review) ) {
+                    $metadata_arr_for_review['content_data'] = '    <!-- The content has been removed from the metadata review. -->';
+                }
+                    wp_cache_add( 'amt_cache_metadata_block_content_filter', $metadata_arr_for_review, $group='add-meta-tags' );
+                unset($metadata_arr_for_review);
+            }
 
             // Return cached metadata (contains the post body)
             return implode( PHP_EOL, $cached_content_metadata_arr );
@@ -458,9 +506,12 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         // URL - Uses amt_get_permalink_for_multipage()
         $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( amt_get_permalink_for_multipage($post) ) . '" />';
 
+        // mainEntityOfPage
+        $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url( amt_get_permalink_for_multipage($post) ) . '" />';
+
         // name
         // Note: Contains multipage information through amt_process_paged()
-        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( amt_process_paged( get_the_title($post->ID) ) ) . '" />';
+        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( amt_process_paged( strip_tags( get_the_title($post->ID) ) ) ) . '" />';
 
         // headline - contains title information
         //$metadata_arr['microdata:headline'] = '<meta itemprop="headline" content="' . esc_attr( amt_get_title_for_metadata($options, $post) ) . '" />';
@@ -487,6 +538,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         if ( ! empty( $global_image_override_url ) ) {
             $metadata_arr[] = '<!-- Scope BEGIN: ImageObject -->';
             $metadata_arr[] = '<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">';
+            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $global_image_override_url ) . '" />';
             $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( $global_image_override_url ) . '" />';
             $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
 
@@ -521,6 +573,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
             if ( $has_images === false && ! empty( $options["default_image_url"] ) ) {
                 $metadata_arr[] = '<!-- Scope BEGIN: ImageObject -->';
                 $metadata_arr[] = '<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">';
+                $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
                 $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
                 $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
             }
@@ -545,7 +598,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         // for consistency with Article objects.
         // TODO: it should allow filtering '<div>'
         $metadata_arr[] = '<div> <!-- Product text body: BEGIN -->';
-        $metadata_arr[] = $post_body;
+        $metadata_arr['content_data'] = $post_body;
         $metadata_arr[] = '</div> <!-- Product text body: END -->';
         // Now add closing tag for Article
         $metadata_arr[] = $closing_product_tag;
@@ -609,7 +662,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         $metadata_arr[] = '</span> <!-- Scope END: Person -->';
 
         // name
-        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_the_title($post->ID) ) . '" />';
+        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( strip_tags( get_the_title($post->ID) ) ) . '" />';
 
         // headline - contains title information
         $metadata_arr['microdata:headline'] = '<meta itemprop="headline" content="' . esc_attr( amt_get_title_for_metadata($options, $post) ) . '" />';
@@ -642,6 +695,9 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
             }
         }
 
+        // mainEntityOfPage
+        $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url( get_permalink( $post->ID ) ) . '" />';
+
         // Metadata specific to each attachment type
 
         if ( 'image' == $attachment_type ) {
@@ -651,33 +707,45 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
             // Get image metatags. $post is an image object.
             $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_image_metatags( $post, $size=$image_size, $is_representative=true ) );
             // Add the post body here
-            $metadata_arr[] = $post_body;
+            $metadata_arr['content_data'] = $post_body;
             // Scope END: ImageObject
             $metadata_arr[] = '</div> <!-- Scope END: ImageObject -->';
 
         } elseif ( 'video' == $attachment_type ) {
 
             // Video specific metatags
-            // URL (for attachments: links to attachment page)
-            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $post->ID ) ) . '" />';
+
+            // URL (links to image file)
+            //$metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $post->ID ) ) . '" />';
+            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
+
+            // sameAs (links to attachment page)
+            $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( get_permalink( $post->ID ) ) . '" />';
+
             $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
             $metadata_arr[] = '<meta itemprop="encodingFormat" content="' . esc_attr( $mime_type ) . '" />';
             // Required by Google
             $metadata_arr[] = '<meta itemprop="uploadDate" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
             // Add the post body here
-            $metadata_arr[] = $post_body;
+            $metadata_arr['content_data'] = $post_body;
             // Scope END: VideoObject
             $metadata_arr[] = '</div> <!-- Scope END: VideoObject -->';
 
         } elseif ( 'audio' == $attachment_type ) {
 
             // Audio specific metatags
-            // URL (for attachments: links to attachment page)
-            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $post->ID ) ) . '" />';
+
+            // URL (links to image file)
+            //$metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $post->ID ) ) . '" />';
+            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
+
+            // sameAs (links to attachment page)
+            $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( get_permalink( $post->ID ) ) . '" />';
+
             $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( wp_get_attachment_url($post->ID) ) . '" />';
             $metadata_arr[] = '<meta itemprop="encodingFormat" content="' . esc_attr( $mime_type ) . '" />';
             // Add the post body here
-            $metadata_arr[] = $post_body;
+            $metadata_arr['content_data'] = $post_body;
             // Scope END: AudioObject
             $metadata_arr[] = '</div> <!-- Scope END: AudioObject -->';
 
@@ -739,6 +807,9 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         // URL - Uses amt_get_permalink_for_multipage()
         $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( amt_get_permalink_for_multipage($post) ) . '" />';
 
+        // mainEntityOfPage
+        $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url( amt_get_permalink_for_multipage($post) ) . '" />';
+
         // Dates
         $metadata_arr[] = '<meta itemprop="datePublished" content="' . esc_attr( amt_iso8601_date($post->post_date) ) . '" />';
         $metadata_arr[] = '<meta itemprop="dateModified" content="' . esc_attr( amt_iso8601_date($post->post_modified) ) . '" />';
@@ -749,7 +820,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
         // name
         // Note: Contains multipage information through amt_process_paged()
-        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( amt_process_paged( get_the_title($post->ID) ) ) . '" />';
+        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( amt_process_paged( strip_tags( get_the_title($post->ID) ) ) ) . '" />';
 
         // headline - contains title information
         $metadata_arr['microdata:headline'] = '<meta itemprop="headline" content="' . esc_attr( amt_get_title_for_metadata($options, $post) ) . '" />';
@@ -810,6 +881,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         if ( ! empty( $global_image_override_url ) ) {
             $metadata_arr[] = '<!-- Scope BEGIN: ImageObject -->';
             $metadata_arr[] = '<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">';
+            $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $global_image_override_url ) . '" />';
             $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( $global_image_override_url ) . '" />';
             $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
 
@@ -895,13 +967,20 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
                         // Scope BEGIN: VideoObject: http://schema.org/VideoObject
                         $metadata_arr[] = '<!-- Scope BEGIN: VideoObject -->';
                         $metadata_arr[] = '<span itemprop="video" itemscope itemtype="http://schema.org/VideoObject">';
+
                         // Video specific metatags
-                        // URL (for attachments: links to attachment page)
-                        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $attachment->ID ) ) . '" />';
+
+                        // URL (links to image file)
+                        //$metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $attachment->ID ) ) . '" />';
+                        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
+
+                        // sameAs (links to attachment page)
+                        $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( get_permalink( $attachment->ID ) ) . '" />';
+
                         $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
                         $metadata_arr[] = '<meta itemprop="encodingFormat" content="' . esc_attr( $mime_type ) . '" />';
                         // name
-                        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_the_title($attachment->ID) ) . '" />';
+                        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( strip_tags( get_the_title($attachment->ID) ) ) . '" />';
                         // Description - We use the description defined by Add-Meta-Tags
                         $content_desc = amt_get_content_description($attachment);
                         if ( ! empty($content_desc) ) {
@@ -932,13 +1011,20 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
                         // Scope BEGIN: AudioObject: http://schema.org/AudioObject
                         $metadata_arr[] = '<!-- Scope BEGIN: AudioObject -->';
                         $metadata_arr[] = '<span itemprop="audio" itemscope itemtype="http://schema.org/AudioObject">';
+
                         // Audio specific metatags
-                        // URL (for attachments: links to attachment page)
-                        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $attachment->ID ) ) . '" />';
+
+                        // URL (links to image file)
+                        //$metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $attachment->ID ) ) . '" />';
+                        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
+
+                        // sameAs (links to attachment page)
+                        $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( get_permalink( $attachment->ID ) ) . '" />';
+
                         $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( wp_get_attachment_url($attachment->ID) ) . '" />';
                         $metadata_arr[] = '<meta itemprop="encodingFormat" content="' . esc_attr( $mime_type ) . '" />';
                         // name
-                        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_the_title($attachment->ID) ) . '" />';
+                        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( strip_tags( get_the_title($attachment->ID) ) ) . '" />';
                         // Description - We use the description defined by Add-Meta-Tags
                         $content_desc = amt_get_content_description($attachment);
                         if ( ! empty($content_desc) ) {
@@ -983,8 +1069,14 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
                 $metadata_arr[] = '<meta itemprop="caption" content="' . esc_attr( $embedded_item['alt'] ) . '" />';
                 // alt
                 $metadata_arr[] = '<meta itemprop="text" content="' . esc_attr( $embedded_item['alt'] ) . '" />';
-                // URL (links to web page containing the image)
-                $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $embedded_item['page'] ) . '" />';
+
+                // URL (links to image file)
+                //$metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $embedded_item['page'] ) . '" />';
+                $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $embedded_item['image'] ) . '" />';
+
+                // sameAs (links to attachment page)
+                $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( $embedded_item['page'] ) . '" />';
+
                 // thumbnail url
                 $metadata_arr[] = '<meta itemprop="thumbnailUrl" content="' . esc_url_raw( $embedded_item['thumbnail'] ) . '" />';
                 // main image
@@ -1056,6 +1148,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
             if ( $has_images === false && ! empty( $options["default_image_url"] ) ) {
                 $metadata_arr[] = '<!-- Scope BEGIN: ImageObject -->';
                 $metadata_arr[] = '<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">';
+                $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
                 $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
                 $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
             }
@@ -1092,7 +1185,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         $main_text_property = apply_filters( 'amt_schemaorg_property_main_text', $main_text_property );
 
         $metadata_arr[] = '<div itemprop="' . esc_attr($main_text_property) . '">';
-        $metadata_arr[] = $post_body;
+        $metadata_arr['content_data'] = $post_body;
         $metadata_arr[] = '</div> <!-- Itemprop END: ' . esc_attr($main_text_property) . ' -->';
         // Now add closing tag for Article
         $metadata_arr[] = $closing_article_tag;
@@ -1107,14 +1200,44 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
     // Add our comment
     if ( count( $metadata_arr ) > 0 ) {
-        array_unshift( $metadata_arr, "<!-- BEGIN Schema.org microdata added by Add-Meta-Tags WordPress plugin -->" );
-        array_unshift( $metadata_arr, "" );   // Intentionaly left empty
         // For AMT timings
         if ( $options['enable_timings'] == '1' ) {
-            $metadata_arr[] = sprintf( '<!-- Add-Meta-Tags Timings (milliseconds) - Block total time: %.3f msec - Cached: %s -->', (microtime(true) - $t) * 1000, $is_cached );
+            array_unshift( $metadata_arr, sprintf( '<!-- Add-Meta-Tags Timings (milliseconds) - Block total time: %.3f msec - Cached: %s -->', (microtime(true) - $t) * 1000, $is_cached ) );
         }
-        array_push( $metadata_arr, "<!-- END Schema.org microdata added by Add-Meta-Tags WordPress plugin -->" );
+
+        if ( $options["omit_vendor_html_comments"] == "0" ) {
+            array_unshift( $metadata_arr, "<!-- BEGIN Schema.org microdata added by the Add-Meta-Tags WordPress plugin -->" );
+        }
+        array_unshift( $metadata_arr, "" );   // Intentionaly left empty
+        if ( $options["omit_vendor_html_comments"] == "0" ) {
+            array_push( $metadata_arr, "<!-- END Schema.org microdata added by the Add-Meta-Tags WordPress plugin -->" );
+        }
         array_push( $metadata_arr, "" );   // Intentionaly left empty
+    }
+
+    //
+    // Non persistent cache for metadata review mode.
+    //
+    // The review mode's content filter should have bigger priority than this
+    // filter (be executed after this one). This one by default has priority 9999
+    // while the review mode filter has priority of 10000
+    if ( amt_check_run_metadata_review_code($options) ) {
+        // What happens here is this: we copy the metadata array and remove the
+        // item that contains the content data, because it is not needed for
+        // metadata review.
+        // Then use non-persistent cache to store this new array.
+        // Metadata Review mode's filtering function should be attached with a
+        // priority bigger than this one, so that it is executed after this one.
+        // There the data is loaded from the non-persistent cache.
+        // This way, the timings are the same as in the source code and also
+        // it is more efficient from a resources perspective.
+        // WARNING: in order to work fine, set correct filter priorities.
+        $metadata_arr_for_review = $metadata_arr;
+        if ( array_key_exists('content_data', $metadata_arr_for_review) ) {
+            $metadata_arr_for_review['content_data'] = '    <!-- The content has been removed from the metadata review. -->';
+        }
+        wp_cache_add( 'amt_cache_metadata_block_content_filter', $metadata_arr_for_review, $group='add-meta-tags' );
+        unset($metadata_arr_for_review);
     }
 
     //return $post_body;
@@ -1144,15 +1267,19 @@ function amt_get_schemaorg_image_metatags( $image, $size='medium', $is_represent
     $main_size_meta = wp_get_attachment_image_src( $image->ID , $size );
 
     // name (title)
-    $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_the_title( $image->ID ) ) . '" />';
+    $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( strip_tags( get_the_title( $image->ID ) ) ) . '" />';
     // OLD name (title)
     //$image_title = sanitize_text_field( $image->post_title );
     //if ( ! empty( $image_title ) ) {
     //    $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( $image_title ) . '" />';
     //}
 
-    // URL (links to attachment page)
-    $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $image->ID ) ) . '" />';
+    // URL (links to image file)
+    //$metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( get_permalink( $image->ID ) ) . '" />';
+    $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( $main_size_meta[0] ) . '" />';
+
+    // sameAS (links to attachment page)
+    $metadata_arr[] = '<meta itemprop="sameAs" content="' . esc_url_raw( get_permalink( $image->ID ) ) . '" />';
 
     // Description (generated from $image->post_content. See: amt_get_the_excerpt()
     $image_description = amt_get_content_description($image);
@@ -1216,8 +1343,28 @@ function amt_get_schemaorg_publisher_metatags( $options, $author_id=null ) {
         $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( $site_description ) . '" />';
     }
     // logo
-    if ( !empty($options["default_image_url"]) ) {
-        $metadata_arr[] = '<meta itemprop="logo" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
+    if ( ! empty($options["default_image_url"]) ) {
+        $metadata_arr[] = '<!-- Scope BEGIN: ImageObject -->';
+        $metadata_arr[] = '<span itemprop="logo" itemscope itemtype="http://schema.org/ImageObject">';
+        // name (title)
+        $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( get_bloginfo('name') ) . ' ' . __('logo', 'add-meta-tags') . '" />';
+        // caption
+        //$metadata_arr[] = '<meta itemprop="caption" content="' . esc_attr( rtrim(get_bloginfo('description'), '.') ) . '." />';
+        // alt
+        $metadata_arr[] = '<meta itemprop="text" content="' . esc_attr( get_bloginfo('name') ) . ' ' . __('logo', 'add-meta-tags') . '" />';
+        // URL (links to web page containing the image)
+        $metadata_arr[] = '<meta itemprop="url" content="' . esc_url( $options["default_image_url"] ) . '" />';
+        // thumbnail url
+        //$metadata_arr[] = '<meta itemprop="thumbnailUrl" content="' . esc_url_raw( $embedded_item['thumbnail'] ) . '" />';
+        // main image
+        $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url( $options["default_image_url"] ) . '" />';
+        //if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+        //    $metadata_arr[] = '<meta itemprop="width" content="' . esc_attr( $embedded_item['width'] ) . '" />';
+        //    $metadata_arr[] = '<meta itemprop="height" content="' . esc_attr( $embedded_item['height'] ) . '" />';
+        //    $metadata_arr[] = '<meta itemprop="encodingFormat" content="image/jpeg" />';
+        //}
+        // Scope END: ImageObject
+        $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
     }
     // url
     // The blog url is used by default. Google+, Facebook and Twitter profile URLs are added as sameAs.
@@ -1327,7 +1474,11 @@ function amt_add_schemaorg_metadata_comment_filter( $comment_text ) {
 
     global $post, $comment;
 
-    $metadata_arr[] = '<!-- BEGIN Metadata added by Add-Meta-Tags WordPress plugin -->';
+    $options = amt_get_options();
+
+    if ( $options["omit_vendor_html_comments"] == "0" ) {
+        $metadata_arr[] = '<!-- BEGIN Metadata added by the Add-Meta-Tags WordPress plugin -->';
+    }
 
     $metadata_arr[] = '<!-- Scope BEGIN: UserComments -->';
     $metadata_arr[] = '<div itemprop="comment" itemscope itemtype="http://schema.org/UserComments">';
@@ -1360,7 +1511,9 @@ function amt_add_schemaorg_metadata_comment_filter( $comment_text ) {
 
     $metadata_arr[] = '</div> <!-- Scope END: UserComments -->';
 
-    $metadata_arr[] = '<!-- END Metadata added by Add-Meta-Tags WordPress plugin -->';
+    if ( $options["omit_vendor_html_comments"] == "0" ) {
+        $metadata_arr[] = '<!-- END Metadata added by the Add-Meta-Tags WordPress plugin -->';
+    }
 
     // Allow filtering of the generated metadata
     $metadata_arr = apply_filters( 'amt_schemaorg_comments_extra', $metadata_arr, $post, $comment );
@@ -1453,7 +1606,14 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         $organization_arr = array();
         // Context
         $organization_arr['@context'] = 'http://schema.org';
+        // ID
+        $organization_arr['@id'] = amt_get_schemaorg_entity_id('organization');
+
         $organization_arr = array_merge($organization_arr, amt_get_jsonld_schemaorg_publisher_array($options));
+
+        // mainEntityOfPage
+        $organization_arr['mainEntityOfPage'] = esc_url( trailingslashit( get_bloginfo('url') ) );
+
         // Get publisher/mainEntity metatags
 //        $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_publisher_metatags( $options ) );
 
@@ -1462,6 +1622,8 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         $website_arr = array();
         // Context
         $website_arr['@context'] = 'http://schema.org';
+        // ID
+        $website_arr['@id'] = amt_get_schemaorg_entity_id('website');
         // Type
         $website_arr['@type'] = 'WebSite';
         // name
@@ -1474,6 +1636,9 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         // TODO: use tag line. Needs feedback!
         // url
         $website_arr['url'] = esc_url_raw( trailingslashit( get_bloginfo('url') ) );
+
+        // publisher
+//        $website_arr['publisher'] = array( '@id' => esc_attr(amt_get_schemaorg_entity_id('organization') ) );
 
         // SearchAction
         // Scope BEGIN: SearchAction: http://schema.org/SearchAction
@@ -1520,10 +1685,14 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         unset( $metadata_arr['@context'] );
 
         $main_entity_arr = array();
+
         // Context
         $main_entity_arr['@context'] = 'http://schema.org';
 
         if ( $options['author_profile_source'] == 'frontpage' ) {
+
+            // ID
+            $main_entity_arr['@id'] = amt_get_schemaorg_entity_id('person');
 
             // Author
             // Scope BEGIN: Person: http://schema.org/Person
@@ -1531,13 +1700,24 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
             //        $metadata_arr[] = '<span itemprop="author" itemscope itemtype="http://schema.org/Person"' . amt_get_schemaorg_itemref('person_author') . '>';
             // Get author metatags
             $main_entity_arr = array_merge($main_entity_arr, amt_get_jsonld_schemaorg_author_array( $post->post_author, $options ));
+
+            // mainEntityOfPage
+            $main_entity_arr['mainEntityOfPage'] = esc_url( trailingslashit( get_bloginfo('url') ) );
+
             // Scope END: Person
             //        $metadata_arr[] = '</span> <!-- Scope END: Person -->';
 
         } else {
 
+            // ID
+            $main_entity_arr['@id'] = amt_get_schemaorg_entity_id('organization');
+
             // Organization
             $main_entity_arr = array_merge($main_entity_arr, amt_get_jsonld_schemaorg_publisher_array($options));
+
+            // mainEntityOfPage
+            $main_entity_arr['mainEntityOfPage'] = esc_url( trailingslashit( get_bloginfo('url') ) );
+
             // Get publisher/mainEntity metatags
 //            $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_publisher_metatags( $options ) );
         }
@@ -1546,6 +1726,8 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         $website_arr = array();
         // Context
         $website_arr['@context'] = 'http://schema.org';
+        // ID
+        $website_arr['@id'] = amt_get_schemaorg_entity_id('website');
         // Type
         $website_arr['@type'] = 'WebSite';
         // name
@@ -1558,6 +1740,14 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         // TODO: use tag line. Needs feedback!
         // url
         $website_arr['url'] = esc_url_raw( trailingslashit( get_bloginfo('url') ) );
+
+//        if ( $options['author_profile_source'] == 'frontpage' ) {
+            // author
+            //$website_arr['author'] = array( '@id' => esc_attr(amt_get_schemaorg_entity_id('person') ) );
+//        } else {
+            // publisher
+            //$website_arr['publisher'] = array( '@id' => esc_attr(amt_get_schemaorg_entity_id('organization') ) );
+//        }
 
         // SearchAction
         // Scope BEGIN: SearchAction: http://schema.org/SearchAction
@@ -1620,6 +1810,10 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         // Get author metatags
 //        $metadata_arr = array_merge( $metadata_arr, amt_get_schemaorg_author_metatags( $author->ID, $options ) );
         $metadata_arr = array_merge( $metadata_arr, amt_get_jsonld_schemaorg_author_array( $author->ID, $options ) );
+
+        // mainEntityOfPage
+        $metadata_arr['mainEntityOfPage'] = esc_url( get_author_posts_url( $author->ID ) );
+
         // Scope END: Person
 //        $metadata_arr[] = '</span> <!-- Scope END: Person -->';
 
@@ -1638,9 +1832,12 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         // URL - Uses amt_get_permalink_for_multipage()
         $metadata_arr['url'] = esc_url_raw( amt_get_permalink_for_multipage($post) );
 
+        // mainEntityOfPage
+        $metadata_arr['mainEntityOfPage'] = esc_url( amt_get_permalink_for_multipage($post) );
+
         // name
         // Note: Contains multipage information through amt_process_paged()
-        $metadata_arr['name'] = esc_attr( amt_process_paged( get_the_title($post->ID) ) );
+        $metadata_arr['name'] = esc_attr( amt_process_paged( strip_tags( get_the_title($post->ID) ) ) );
 
         // headline - contains title information
         //$metadata_arr['headline'] = esc_attr( amt_get_title_for_metadata($options, $post) );
@@ -1671,6 +1868,7 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 
             $current_image_obj = array();
             $current_image_obj['@type'] = 'ImageObject';
+            $current_image_obj['url'] = esc_url_raw( $global_image_override_url );
             $current_image_obj['contentUrl'] = esc_url_raw( $global_image_override_url );
             $metadata_arr['image'][] = $current_image_obj;
 //            $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
@@ -1708,6 +1906,7 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 //                $metadata_arr[] = '<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">';
                 $current_image_obj = array();
                 $current_image_obj['@type'] = 'ImageObject';
+                $current_image_obj['url'] = esc_url_raw( $options["default_image_url"] );
                 $current_image_obj['contentUrl'] = esc_url_raw( $options["default_image_url"] );
                 $metadata_arr['image'][] = $current_image_obj;
 //                $metadata_arr[] = '</span> <!-- Scope END: ImageObject -->';
@@ -1803,7 +2002,7 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 //        $metadata_arr[] = '</span> <!-- Scope END: Person -->';
 
         // name
-        $metadata_arr['name'] = esc_attr( get_the_title($post->ID) );
+        $metadata_arr['name'] = esc_attr( strip_tags( get_the_title($post->ID) ) );
 
         // headline - contains title information
         $metadata_arr['headline'] = esc_attr( amt_get_title_for_metadata($options, $post) );
@@ -1836,6 +2035,9 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
             }
         }
 
+        // mainEntityOfPage
+        $metadata_arr['mainEntityOfPage'] = esc_url( get_permalink( $post->ID ) );
+
         // Metadata specific to each attachment type
 
         if ( 'image' == $attachment_type ) {
@@ -1843,7 +2045,8 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
             // Allow filtering of the image size.
             $image_size = apply_filters( 'amt_image_size_attachment', 'full' );
             // Get image metatags. $post is an image object.
-            $metadata_arr['image'] = amt_get_jsonld_schemaorg_image_array( $post, $size=$image_size, $is_representative=true );
+            $metadata_arr = array_merge( $metadata_arr, amt_get_jsonld_schemaorg_image_array( $post, $size=$image_size, $is_representative=true ) );
+
             // Add the post body here
 //            $metadata_arr[] = $post_body;
             // Scope END: ImageObject
@@ -1852,8 +2055,14 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         } elseif ( 'video' == $attachment_type ) {
 
             // Video specific metatags
-            // URL (for attachments: links to attachment page)
-            $metadata_arr['url'] = esc_url_raw( get_permalink( $post->ID ) );
+
+            // URL (links to image file)
+            //$metadata_arr['url'] = esc_url_raw( get_permalink( $post->ID ) );
+            $metadata_arr['url'] = esc_url_raw( wp_get_attachment_url($post->ID) );
+
+            // sameAs (links to attachment page)
+            $metadata_arr['sameAs'] = esc_url_raw( get_permalink( $post->ID ) );
+
             $metadata_arr['contentUrl'] = esc_url_raw( wp_get_attachment_url($post->ID) );
             $metadata_arr['encodingFormat'] = esc_attr( $mime_type );
             // Required by Google
@@ -1866,8 +2075,14 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         } elseif ( 'audio' == $attachment_type ) {
 
             // Audio specific metatags
-            // URL (for attachments: links to attachment page)
-            $metadata_arr['url'] = esc_url_raw( get_permalink( $post->ID ) );
+
+            // URL (links to image file)
+            //$metadata_arr['url'] = esc_url_raw( get_permalink( $post->ID ) );
+            $metadata_arr['url'] = esc_url_raw( wp_get_attachment_url($post->ID) );
+
+            // sameAs (links to attachment page)
+            $metadata_arr['sameAs'] = esc_url_raw( get_permalink( $post->ID ) );
+
             $metadata_arr['contentUrl'] = esc_url_raw( wp_get_attachment_url($post->ID) );
             $metadata_arr['encodingFormat'] = esc_attr( $mime_type );
             // Add the post body here
@@ -1939,6 +2154,9 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         // URL - Uses amt_get_permalink_for_multipage()
         $metadata_arr['url'] = esc_url_raw( amt_get_permalink_for_multipage($post) );
 
+        // mainEntityOfPage
+        $metadata_arr['mainEntityOfPage'] = esc_url( amt_get_permalink_for_multipage($post) );
+
         // Dates
         $metadata_arr['datePublished'] = esc_attr( amt_iso8601_date($post->post_date) );
         $metadata_arr['dateModified'] = esc_attr( amt_iso8601_date($post->post_modified) );
@@ -1949,7 +2167,7 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 
         // name
         // Note: Contains multipage information through amt_process_paged()
-        $metadata_arr['name'] = esc_attr( amt_process_paged( get_the_title($post->ID) ) );
+        $metadata_arr['name'] = esc_attr( amt_process_paged( strip_tags( get_the_title($post->ID) ) ) );
 
         // headline - contains title information
         $metadata_arr['headline'] = esc_attr( amt_get_title_for_metadata($options, $post) );
@@ -2052,6 +2270,7 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 //            $metadata_arr[] = '<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">';
             $current_image_obj = array();
             $current_image_obj['@type'] = 'ImageObject';
+            $current_image_obj['url'] = esc_url_raw( $global_image_override_url );
             $current_image_obj['contentUrl'] = esc_url_raw( $global_image_override_url );
             $metadata_arr['image'][] = $current_image_obj;
 //            $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( $global_image_override_url ) . '" />';
@@ -2145,11 +2364,18 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
                         // URL (for attachments: links to attachment page)
                         $current_video_obj = array();
                         $current_video_obj['@type'] = 'VideoObject';
-                        $current_video_obj['url'] = esc_url_raw( get_permalink( $attachment->ID ) );
+
+                        // URL (links to image file)
+                        //$current_video_obj['url'] = esc_url_raw( get_permalink( $attachment->ID ) );
+                        $current_video_obj['url'] = esc_url_raw( wp_get_attachment_url($attachment->ID) );
+
+                        // sameAs (links to attachment page)
+                        $current_video_obj['sameAs'] = esc_url_raw( get_permalink( $attachment->ID ) );
+
                         $current_video_obj['contentUrl'] = esc_url_raw( wp_get_attachment_url($attachment->ID) );
                         $current_video_obj['encodingFormat'] = esc_attr( $mime_type );
                         // name
-                        $current_video_obj['name'] = esc_attr( get_the_title($attachment->ID) );
+                        $current_video_obj['name'] = esc_attr( strip_tags( get_the_title($attachment->ID) ) );
                         // Description - We use the description defined by Add-Meta-Tags
                         $content_desc = amt_get_content_description($attachment);
                         if ( ! empty($content_desc) ) {
@@ -2184,11 +2410,18 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
                         // URL (for attachments: links to attachment page)
                         $current_audio_obj = array();
                         $current_audio_obj['@type'] = 'AudioObject';
-                        $current_audio_obj['url'] = esc_url_raw( get_permalink( $attachment->ID ) );
+
+                        // URL (links to image file)
+                        //$current_audio_obj['url'] = esc_url_raw( get_permalink( $attachment->ID ) );
+                        $current_audio_obj['url'] = esc_url_raw( wp_get_attachment_url($attachment->ID) );
+
+                        // sameAs (links to attachment page)
+                        $current_audio_obj['sameAs'] = esc_url_raw( get_permalink( $attachment->ID ) );
+
                         $current_audio_obj['contentUrl'] = esc_url_raw( wp_get_attachment_url($attachment->ID) );
                         $current_audio_obj['encodingFormat'] = esc_attr( $mime_type );
                         // name
-                        $current_audio_obj['name'] = esc_attr( get_the_title($attachment->ID) );
+                        $current_audio_obj['name'] = esc_attr( strip_tags( get_the_title($attachment->ID) ) );
                         // Description - We use the description defined by Add-Meta-Tags
                         $content_desc = amt_get_content_description($attachment);
                         if ( ! empty($content_desc) ) {
@@ -2236,8 +2469,14 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
                 $current_image_obj['caption'] = esc_attr( $embedded_item['alt'] );
                 // alt
                 $current_image_obj['text'] = esc_attr( $embedded_item['alt'] );
-                // URL (links to web page containing the image)
-                $current_image_obj['url'] = esc_url_raw( $embedded_item['page'] );
+
+                // URL (links to image file)
+                //$current_image_obj['url'] = esc_url_raw( $embedded_item['page'] );
+                $current_image_obj['url'] = esc_url_raw( $embedded_item['image'] );
+
+                // sameAs (links to attachment page)
+                $current_image_obj['sameAs'] = esc_url_raw( $embedded_item['page'] );
+
                 // thumbnail url
                 $current_image_obj['thumbnailUrl'] = esc_url_raw( $embedded_item['thumbnail'] );
                 // main image
@@ -2316,6 +2555,7 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 //                $metadata_arr[] = '<span itemprop="image" itemscope itemtype="http://schema.org/ImageObject">';
                 $current_image_obj = array();
                 $current_image_obj['@type'] = 'ImageObject';
+                $current_image_obj['url'] = esc_url_raw( $options["default_image_url"] );
                 $current_image_obj['contentUrl'] = esc_url_raw( $options["default_image_url"] );
                 $metadata_arr['image'][] = $current_image_obj;
 //                $metadata_arr[] = '<meta itemprop="contentUrl" content="' . esc_url_raw( $options["default_image_url"] ) . '" />';
@@ -2392,7 +2632,7 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 
     if ( count( $metadata_arr ) > 1 ) {
         // contains @context by default
-        return array('<script type="application/ld+json">', json_encode($metadata_arr, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), '</script>');
+        return array('<script type="application/ld+json">', 'json+ld_data' => json_encode($metadata_arr), '</script>');
     } else {
         return array();
     }
@@ -2421,15 +2661,19 @@ function amt_get_jsonld_schemaorg_image_array( $image, $size='medium', $is_repre
     $main_size_meta = wp_get_attachment_image_src( $image->ID , $size );
 
     // name (title)
-    $metadata_arr['name'] = esc_attr( get_the_title( $image->ID ) );
+    $metadata_arr['name'] = esc_attr( strip_tags( get_the_title( $image->ID ) ) );
     // OLD name (title)
     //$image_title = sanitize_text_field( $image->post_title );
     //if ( ! empty( $image_title ) ) {
     //    $metadata_arr[] = '<meta itemprop="name" content="' . esc_attr( $image_title ) . '" />';
     //}
 
-    // URL (links to attachment page)
-    $metadata_arr['url'] = esc_url_raw( get_permalink( $image->ID ) );
+    // URL (links to image file)
+    //$metadata_arr['url'] = esc_url_raw( get_permalink( $image->ID ) );
+    $metadata_arr['url'] = esc_url_raw( $main_size_meta[0] );
+
+    // sameAS (links to attachment page)
+    $metadata_arr['sameAs'] = esc_url_raw( get_permalink( $image->ID ) );
 
     // Description (generated from $image->post_content. See: amt_get_the_excerpt()
     $image_description = amt_get_content_description($image);
@@ -2495,8 +2739,30 @@ function amt_get_jsonld_schemaorg_publisher_array( $options, $author_id=null ) {
         $metadata_arr['description'] = esc_attr( $site_description );
     }
     // logo
-    if ( !empty($options["default_image_url"]) ) {
-        $metadata_arr['logo'] = esc_url_raw( $options["default_image_url"] );
+    if ( ! empty($options["default_image_url"]) ) {
+        $metadata_arr['logo'] = array();
+        $logo_obj = array();
+        // Type
+        $logo_obj['@type'] = 'ImageObject';
+        // name (title)
+        $logo_obj['name'] = esc_attr( get_bloginfo('name') ) . ' ' . __('logo', 'add-meta-tags');
+        // caption
+        //$logo_obj['caption'] = esc_attr( rtrim(get_bloginfo('description'), '.') ) . '.';
+        // alt
+        $logo_obj['text'] = esc_attr( get_bloginfo('name') ) . ' ' . __('logo', 'add-meta-tags');
+        // URL (links to web page containing the image)
+        $logo_obj['url'] = esc_url( $options["default_image_url"] );
+        // thumbnail url
+        //$logo_obj['thumbnailUrl'] = esc_url( ... );
+        // main image
+        $logo_obj['contentUrl'] = esc_url( $options["default_image_url"] );
+        //if ( apply_filters( 'amt_extended_image_tags', true ) ) {
+        //    $metadata_arr[] = '<meta itemprop="width" content="' . esc_attr( $embedded_item['width'] ) . '" />';
+        //    $metadata_arr[] = '<meta itemprop="height" content="' . esc_attr( $embedded_item['height'] ) . '" />';
+        //    $metadata_arr[] = '<meta itemprop="encodingFormat" content="image/jpeg" />';
+        //}
+        // Add logo entity to metadata
+        $metadata_arr['logo'][] = $logo_obj;
     }
     // url
     // The blog url is used by default. Google+, Facebook and Twitter profile URLs are added as sameAs.

@@ -351,6 +351,9 @@ class AMT_Command extends WP_CLI_Command {
      * <what>
      * : The type of data to be removed. Supported: all|settings|postdata|userdata|cache
      * 
+     * [--assume-yes]
+     * : Run in non interactive mode.
+     * 
      * ## EXAMPLES
      * 
      *     wp amt clean all
@@ -358,8 +361,9 @@ class AMT_Command extends WP_CLI_Command {
      *     wp amt clean postdata
      *     wp amt clean userdata
      *     wp amt clean cache
+     *     wp amt clean cache --assume-yes
      *
-     * @synopsis <all|settings|postdata|userdata|cache>
+     * @synopsis <all|settings|postdata|userdata|cache> [--assume-yes]
      */
     function clean( $args, $assoc_args ) {
         list( $what ) = $args;
@@ -368,22 +372,28 @@ class AMT_Command extends WP_CLI_Command {
             WP_CLI::error( 'Invalid argument: ' . $what . ' (valid: all|settings|postdata|userdata|cache)' );
         }
 
-        // Confirmation
-        WP_CLI::line( ' ' );
-        WP_CLI::line( 'This commands deletes Add-Meta-Tags data from the database.' );
-        WP_CLI::line( 'This action is final and cannot be undone.' );
-        WP_CLI::line( ' ' );
-        echo 'Are you sure you want to do this?  Type \'yes\' to continue: ';
-        $handle = fopen( 'php://stdin', 'r' );
-        $choice = fgets($handle);
-        fclose($handle);
-        if ( trim($choice) != 'yes' ) {
-            WP_CLI::line( 'Aborting...' );
-            exit;
+        if ( $assoc_args['assume-yes'] ) {
+            WP_CLI::line( ' ' );
+            WP_CLI::line( 'Running in non-interactive mode.' );
+            WP_CLI::line( 'Proceeding with ' . $what . ' cleanup...' );
+        } else {
+            // Confirmation
+            WP_CLI::line( ' ' );
+            WP_CLI::line( 'This commands deletes Add-Meta-Tags data from the database.' );
+            WP_CLI::line( 'This action is final and cannot be undone.' );
+            WP_CLI::line( ' ' );
+            echo 'Are you sure you want to do this?  Type \'yes\' to continue: ';
+            $handle = fopen( 'php://stdin', 'r' );
+            $choice = fgets($handle);
+            fclose($handle);
+            if ( trim($choice) != 'yes' ) {
+                WP_CLI::line( 'Aborting...' );
+                exit;
+            }
+            WP_CLI::line( ' ' );
+            WP_CLI::line( 'Proceeding with ' . $what . ' cleanup...' );
         }
-        WP_CLI::line( ' ' );
-        WP_CLI::line( 'Proceeding with ' . $what . ' cleanup...' );
-        
+
         // Delete AMT settings
         if ( $what == 'settings' || $what == 'all' ) {
             delete_option('add_meta_tags_opts');
@@ -430,8 +440,32 @@ class AMT_Command extends WP_CLI_Command {
         // Delete transient metadata cache
         elseif ( $what == 'cache' || $what == 'all' ) {
 
-            $result = amt_delete_all_transient_metadata_cache();
-            WP_CLI::line( sprintf('Deleted %d transient metadata cache entries.', $result) );
+            // Transients may not be cached in the database, but in a different storage backend.
+            // So, here amt_delete_all_transient_metadata_cache() is not used.
+            //$result = amt_delete_all_transient_metadata_cache();
+            //WP_CLI::line( sprintf('Deleted %d transient metadata cache entries.', $result) );
+
+            global $wpdb;
+
+            // Get the current blog id.
+            $blog_id = get_current_blog_id();
+
+            // Construct the options table name for the current blog
+            $posts_table = $wpdb->get_blog_prefix($blog_id) . 'posts';
+            //var_dump($posts_table);
+
+            // Construct SQL query that fetched the post IDs.
+            $sql = "SELECT ID FROM $posts_table WHERE post_status = 'publish'";
+
+            // Get number of cache entries
+            $results = $wpdb->get_results($sql);
+
+            foreach ( $results as $post) {
+                // Delete the metadata cache for this post object
+                amt_delete_transient_cache_for_post( absint($post->ID) );
+            }
+
+            WP_CLI::line( sprintf('Force purged cached metadata of %d published post objects.', count($results)) );
         }
 
         WP_CLI::success( 'Data clean up complete.' );

@@ -1129,7 +1129,7 @@ function amt_product_group_image_url_woocommerce( $default_image_url, $tax_term_
 function amt_is_edd_product() {
     // Check if edd product page and return true;
     //  * Easy Digital Downloads
-    if ( 'download' == get_post_type() ) {
+    if ( is_singular() && 'download' == get_post_type() ) {
         return true;
     }
 }
@@ -1209,7 +1209,19 @@ function amt_product_group_image_url_edd( $term_id ) {
  */
 
 // Product page detection for Add-Meta-Tags
-function amt_detect_ecommerce_product() {
+function amt_detect_ecommerce_product( $default ) {
+
+    // First and important check.
+    // $default is a boolean variable which indicates if custom content has been
+    // detected by any previous filter.
+    // Check if custom content has already been detected by another filter.
+    // If such content has been detected, just return $default (should be true)
+    // and *do not* add any metadata filters.
+    // This check is mandatory in order the detection mechanism to work correctly.
+    if ( $default ) {
+        return $default;
+    }
+
     // Get the options the DB
     $options = get_option("add_meta_tags_opts");
 
@@ -1240,7 +1252,19 @@ function amt_detect_ecommerce_product() {
 add_filter( 'amt_is_product', 'amt_detect_ecommerce_product', 10, 1 );
 
 // Product group page detection for Add-Meta-Tags
-function amt_detect_ecommerce_product_group() {
+function amt_detect_ecommerce_product_group( $default ) {
+
+    // First and important check.
+    // $default is a boolean variable which indicates if custom content has been
+    // detected by any previous filter.
+    // Check if custom content has already been detected by another filter.
+    // If such content has been detected, just return $default (should be true)
+    // and *do not* add any metadata filters.
+    // This check is mandatory in order the detection mechanism to work correctly.
+    if ( $default ) {
+        return $default;
+    }
+
     // Get the options the DB
     $options = get_option("add_meta_tags_opts");
 
@@ -1819,6 +1843,9 @@ function amt_buddypress_schemaorg_footer( $metadata_arr, $post, $options, $attac
         // URL
         $metadata_arr[] = '<meta itemprop="url" content="' . esc_url( $user_profile_url, array('http', 'https') ) . '" />';
 
+        // mainEntityOfPage
+        $metadata_arr[] = '<meta itemprop="mainEntityOfPage" content="' . esc_url( $user_profile_url, array('http', 'https') ) . '" />';
+
         // Related resources as sameAs
         // Facebook Profile
         //$fb_author_url = get_the_author_meta('amt_facebook_author_profile_url', $user_id);
@@ -2177,6 +2204,9 @@ function amt_buddypress_jsonld_schemaorg( $metadata_arr, $post, $options, $attac
 
         // URL
         $metadata_arr['url'] = esc_url( $user_profile_url, array('http', 'https') );
+
+        // mainEntityOfPage
+        $metadata_arr['mainEntityOfPage'] = esc_url( $user_profile_url, array('http', 'https') );
 
         // Related resources as sameAs
         $metadata_arr['sameAs'] = array();

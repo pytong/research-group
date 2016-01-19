@@ -49,6 +49,42 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
+// Returns the post object filtered.
+function amt_get_queried_object($options) {
+    // Get current post object
+    $post = get_queried_object();
+    // Allow filtering of the $post object.
+    $post = apply_filters('amt_get_queried_object', $post, $options);
+    return $post;
+}
+
+
+// Returns the plugin options
+function amt_get_options() {
+    return get_option("add_meta_tags_opts");
+}
+
+
+// Returns a key for the non persistent cache
+function amt_get_amtcache_key($basename, $post=null) {
+    // Non persistent object cache
+    if ( is_null($post) ) {     // other data
+        $amtcache_key = sprintf('%s_data', $basename);
+    } elseif ( is_numeric($post) ) {    // id
+        $amtcache_key = sprintf('%s_%d', $basename, $post);
+    } elseif ( isset($post->ID) ) {     // post, user
+        $amtcache_key = sprintf('%s_%d', $basename, $post->ID);
+    } elseif ( isset($post->term_id) ) {    // term
+        $amtcache_key = sprintf('%s_%d', $basename, $post->term_id);
+    } else {
+        // Use a static key name. Very unlikely for the page to have two non post objects.
+        $amtcache_key = sprintf('%s_other_post', $basename);
+    }
+    //var_dump($post);
+    //var_dump($amtcache_key);
+    return $amtcache_key;
+}
+
 /**
  * Helper function that returns an array of allowable HTML elements and attributes
  * for use in wp_kses() function.
@@ -266,6 +302,13 @@ function amt_process_paged( $data ) {
  */
 function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250, $desc_min_length=150 ) {
     
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_the_excerpt', $post);
+    $amt_excerpt = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $amt_excerpt !== false ) {
+        return $amt_excerpt;
+    }
+
     if ( empty($post->post_excerpt) || get_post_type( $post ) == 'attachment' ) {   // In attachments we always use $post->post_content to get a description
 
         // Here we generate an excerpt from $post->post_content
@@ -370,6 +413,10 @@ function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250,
      */
     $amt_excerpt = apply_filters( 'amt_get_the_excerpt', $amt_excerpt, $post );
 
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $amt_excerpt, $group='add-meta-tags' );
+
     return $amt_excerpt;
 }
 
@@ -378,6 +425,16 @@ function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250,
  * Returns a comma-delimited list of a post's terms that belong to custom taxonomies.
  */
 function amt_get_keywords_from_custom_taxonomies( $post ) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_keywords_from_custom_taxonomies', $post);
+    $custom_tax_keywords = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $custom_tax_keywords !== false ) {
+        return $custom_tax_keywords;
+    }
+
+    $custom_tax_keywords = '';
+
     // Array to hold all terms of custom taxonomies.
     $keywords_arr = array();
 
@@ -403,10 +460,16 @@ function amt_get_keywords_from_custom_taxonomies( $post ) {
     }
 
     if ( ! empty( $keywords_arr ) ) {
-        return implode(', ', $keywords_arr);
+        $custom_tax_keywords = implode(', ', $keywords_arr);
     } else {
-        return '';
+        $custom_tax_keywords = '';
     }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $custom_tax_keywords, $group='add-meta-tags' );
+
+    return $custom_tax_keywords;
 }
 
 
@@ -415,7 +478,15 @@ function amt_get_keywords_from_custom_taxonomies( $post ) {
  */
 function amt_get_keywords_from_post_cats( $post ) {
 
-    $postcats = "";
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_keywords_from_post_cats', $post);
+    $postcats = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $postcats !== false ) {
+        return $postcats;
+    }
+
+    $postcats = '';
+
     foreach((get_the_category($post->ID)) as $cat) {
         if ( $cat->slug != 'uncategorized' ) {
             $postcats .= $cat->cat_name . ', ';
@@ -423,6 +494,10 @@ function amt_get_keywords_from_post_cats( $post ) {
     }
     // strip final comma
     $postcats = substr($postcats, 0, -2);
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $postcats, $group='add-meta-tags' );
 
     return $postcats;
 }
@@ -449,21 +524,30 @@ function amt_get_first_category( $post ) {
  */
 function amt_get_post_tags( $post ) {
 
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_post_tags', $post);
+    $posttags = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $posttags !== false ) {
+        return $posttags;
+    }
+
+    $posttags = '';
+
     if ( version_compare( get_bloginfo('version'), '2.3', '>=' ) ) {
         $tags = get_the_tags($post->ID);
-        if ( empty( $tags ) ) {
-            return false;
-        } else {
-            $tag_list = "";
+        if ( ! empty( $tags ) ) {
             foreach ( $tags as $tag ) {
-                $tag_list .= $tag->name . ', ';
+                $posttags .= $tag->name . ', ';
             }
-            $tag_list = rtrim($tag_list, " ,");
-            return $tag_list;
+            $posttags = rtrim($posttags, " ,");
         }
-    } else {
-        return "";
     }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $posttags, $group='add-meta-tags' );
+
+    return $posttags;
 }
 
 
@@ -472,6 +556,15 @@ function amt_get_post_tags( $post ) {
  * The built-in category "Uncategorized" is excluded.
  */
 function amt_get_all_categories($no_uncategorized = TRUE) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_all_categories');
+    $all_cats = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $all_cats !== false ) {
+        return $all_cats;
+    }
+
+    $all_cats = '';
 
     global $wpdb;
 
@@ -483,18 +576,20 @@ function amt_get_all_categories($no_uncategorized = TRUE) {
         $sql = "SELECT cat_name FROM $wpdb->categories ORDER BY cat_name ASC";
     }
     $categories = $wpdb->get_results($sql);
-    if ( empty( $categories ) ) {
-        return "";
-    } else {
-        $all_cats = "";
+    if ( ! empty( $categories ) ) {
         foreach ( $categories as $cat ) {
             if ($no_uncategorized && $cat->$cat_field != "Uncategorized") {
                 $all_cats .= $cat->$cat_field . ', ';
             }
         }
         $all_cats = rtrim($all_cats, " ,");
-        return $all_cats;
     }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $all_cats, $group='add-meta-tags' );
+
+    return $all_cats;
 }
 
 
@@ -504,12 +599,22 @@ function amt_get_all_categories($no_uncategorized = TRUE) {
  *
  * Accepts the $category_arr, an array containing the initial categories.
  */
-function amt_get_categories_from_loop( $category_arr=array() ) {
+function amt_get_categories_from_loop() {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_categories_from_loop');
+    $category_arr = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $category_arr !== false ) {
+        return $category_arr;
+    }
+
+    $category_arr = array();
+
     if (have_posts()) {
         while ( have_posts() ) {
             the_post(); // Iterate the post index in The Loop. Retrieves the next post, sets up the post, sets the 'in the loop' property to true.
             $categories = get_the_category();
-            if( $categories ) {
+            if( ! empty($categories) ) {
                 foreach( $categories as $category ) {
                     if ( ! in_array( $category->name, $category_arr ) && $category->slug != 'uncategorized' ) {
                         $category_arr[] = $category->name;
@@ -519,6 +624,11 @@ function amt_get_categories_from_loop( $category_arr=array() ) {
 		}
 	}
     rewind_posts(); // Not sure if this is needed.
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $category_arr, $group='add-meta-tags' );
+
     return $category_arr;
 }
 
@@ -528,12 +638,22 @@ function amt_get_categories_from_loop( $category_arr=array() ) {
  *
  * Accepts the $tag_arr, an array containing the initial tags.
  */
-function amt_get_tags_from_loop( $tag_arr=array() ) {
+function amt_get_tags_from_loop() {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_tags_from_loop');
+    $tag_arr = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $tag_arr !== false ) {
+        return $tag_arr;
+    }
+
+    $tag_arr = array();
+
     if (have_posts()) {
         while ( have_posts() ) {
             the_post(); // Iterate the post index in The Loop. Retrieves the next post, sets up the post, sets the 'in the loop' property to true.
             $tags = get_the_tags();
-            if( $tags ) {
+            if( ! empty($tags) ) {
                 foreach( $tags as $tag ) {
                     if ( ! in_array( $tag->name, $tag_arr ) ) {
                         $tag_arr[] = $tag->name;
@@ -543,6 +663,11 @@ function amt_get_tags_from_loop( $tag_arr=array() ) {
 		}
 	}
     rewind_posts(); // Not sure if this is needed.
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $tag_arr, $group='add-meta-tags' );
+
     return $tag_arr;
 }
 
@@ -573,6 +698,13 @@ function amt_get_referenced_items( $post ) {
  */
 function amt_get_content_description( $post, $auto=true ) {
 
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_content_description', $post);
+    $content_description = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $content_description !== false ) {
+        return $content_description;
+    }
+
     // By default, if a custom description has not been entered by the user in the
     // metabox, a description is autogenerated. To stop this automatic generation
     // of a description and return only the description that has been entered manually,
@@ -596,6 +728,11 @@ function amt_get_content_description( $post, $auto=true ) {
             }
         }
     }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $content_description, $group='add-meta-tags' );
+
     return $content_description;
 }
 
@@ -608,6 +745,13 @@ function amt_get_content_description( $post, $auto=true ) {
  */
 function amt_get_content_keywords($post, $auto=true, $exclude_categories=false) {
     
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_content_keywords', $post);
+    $content_keywords = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $content_keywords !== false ) {
+        return $content_keywords;
+    }
+
     // By default, if custom keywords have not been entered by the user in the
     // metabox, keywords are autogenerated. To stop this automatic generation
     // of keywords and return only the keywords that have been entered manually,
@@ -753,6 +897,10 @@ function amt_get_content_keywords($post, $auto=true, $exclude_categories=false) 
         }
     }
 
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $content_keywords, $group='add-meta-tags' );
+
     return $content_keywords;
 }
 
@@ -769,12 +917,24 @@ function amt_get_content_keywords($post, $auto=true, $exclude_categories=false) 
  *
  */
 function amt_get_supported_post_types() {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_supported_post_types');
+    $supported_types = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $supported_types !== false ) {
+        return $supported_types;
+    }
+
     $supported_builtin_types = array('post', 'page', 'attachment');
     $public_custom_types = get_post_types( array('public'=>true, '_builtin'=>false, 'show_ui'=>true) );
     $supported_types = array_merge($supported_builtin_types, $public_custom_types);
 
     // Allow filtering of the supported content types.
     $supported_types = apply_filters( 'amt_supported_post_types', $supported_types );
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $supported_types, $group='add-meta-tags' );
 
     return $supported_types;
 }
@@ -1065,7 +1225,7 @@ function amt_get_post_meta_newskeywords($post_id) {
  * The default field name is ``_amt_full_metatags``.
  * No need to migrate from older field name.
  */
-function amt_get_post_meta_full_metatags($post_id) {
+function OLD_amt_get_post_meta_full_metatags($post_id) {
     $options = get_option('add_meta_tags_opts');
     if ( ! is_array($options) ) {
         return '';
@@ -1101,47 +1261,118 @@ function amt_get_post_meta_full_metatags($post_id) {
     return '';
 }
 
+function amt_get_post_meta_full_metatags($post_id) {
 
-/**
- * Helper function that returns the value of the custom field that contains
- * a global image override URL.
- * The default field name for the 'global image override URL' is ``_amt_image_url``.
- * No need to migrate from older field name.
- */
-function amt_get_post_meta_image_url($post_id) {
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_post_meta_full_metatags', $post_id);
+    $field_value = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $field_value !== false ) {
+        return $field_value;
+    }
+
+    $field_value = '';
+
     $options = get_option('add_meta_tags_opts');
+
     if ( ! is_array($options) ) {
-        return '';
-    } elseif ( ! array_key_exists( 'metabox_enable_image_url', $options) ) {
-        return '';
-    } elseif ( $options['metabox_enable_image_url'] == '0' ) {
-        return '';
-    }
-    // Internal fields - order matters
-    $supported_custom_fields = array( '_amt_image_url' );
-    // External fields - Allow filtering
-    $external_fields = array();
-    $external_fields = apply_filters( 'amt_external_image_url_fields', $external_fields, $post_id );
-    // Merge external fields to our supported custom fields
-    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
+        $field_value = '';
+    } elseif ( ! array_key_exists( 'metabox_enable_full_metatags', $options) ) {
+        $field_value = '';
+    } elseif ( $options['metabox_enable_full_metatags'] == '0' ) {
+        $field_value = '';
+    } else {
+        // Internal fields - order matters
+        $supported_custom_fields = array( '_amt_full_metatags' );
+        // External fields - Allow filtering
+        $external_fields = array();
+        $external_fields = apply_filters( 'amt_external_full_metatags_fields', $external_fields, $post_id );
+        // Merge external fields to our supported custom fields
+        $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
 
-    // Get an array of all custom fields names of the post
-    $custom_fields = get_post_custom_keys( $post_id );
-    if ( empty( $custom_fields ) ) {
-        // Just return an empty string if no custom fields have been associated with this content.
-        return '';
-    }
-
-    // Try our fields
-    foreach( $supported_custom_fields as $sup_field ) {
-        // If such a field exists in the db, return its content as the news keywords.
-        if ( in_array( $sup_field, $custom_fields ) ) {
-            return get_post_meta( $post_id, $sup_field, true );
+        // Get an array of all custom fields names of the post
+        $custom_fields = get_post_custom_keys( $post_id );
+        if ( empty( $custom_fields ) ) {
+            // Just return an empty string if no custom fields have been associated with this content.
+            $field_value = '';
+        } else {
+            // Try our fields
+            foreach( $supported_custom_fields as $sup_field ) {
+                // If such a field exists in the db, return its content as the news keywords.
+                if ( in_array( $sup_field, $custom_fields ) ) {
+                    $field_value = get_post_meta( $post_id, $sup_field, true );
+                    break;
+                }
+            }
         }
     }
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $field_value, $group='add-meta-tags' );
 
-    //Return empty string if all fail
-    return '';
+    return $field_value;
+}
+
+
+
+
+
+
+
+//
+// Helper function that returns the value of the custom field that contains
+// a global image override URL.
+// The default field name for the 'global image override URL' is ``_amt_image_url``.
+// No need to migrate from older field name.
+//
+function amt_get_post_meta_image_url($post_id) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_post_meta_image_url', $post_id);
+    $image_url = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $image_url !== false ) {
+        return $image_url;
+    }
+
+    $image_url = '';
+
+    $options = get_option('add_meta_tags_opts');
+
+    if ( ! is_array($options) ) {
+        $image_url = '';
+    } elseif ( ! array_key_exists( 'metabox_enable_image_url', $options) ) {
+        $image_url = '';
+    } elseif ( $options['metabox_enable_image_url'] == '0' ) {
+        $image_url = '';
+    } else {
+        // Internal fields - order matters
+        $supported_custom_fields = array( '_amt_image_url' );
+        // External fields - Allow filtering
+        $external_fields = array();
+        $external_fields = apply_filters( 'amt_external_image_url_fields', $external_fields, $post_id );
+        // Merge external fields to our supported custom fields
+        $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
+
+        // Get an array of all custom fields names of the post
+        $custom_fields = get_post_custom_keys( $post_id );
+        if ( empty( $custom_fields ) ) {
+            // Just return an empty string if no custom fields have been associated with this content.
+            $image_url = '';
+        } else {
+            // Try our fields
+            foreach( $supported_custom_fields as $sup_field ) {
+                // If such a field exists in the db, return its content as the news keywords.
+                if ( in_array( $sup_field, $custom_fields ) ) {
+                    $image_url = get_post_meta( $post_id, $sup_field, true );
+                    break;
+                }
+            }
+        }
+    }
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $image_url, $group='add-meta-tags' );
+
+    return $image_url;
 }
 
 
@@ -1279,9 +1510,17 @@ function amt_get_post_meta_referenced_list($post_id) {
  * $post object.
  */
 function amt_get_ordered_attachments( $post ) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_ordered_attachments', $post);
+    $ordered_attachments = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $ordered_attachments !== false ) {
+        return $ordered_attachments;
+    }
+
     // to return IDs:
     // $attachments = array_values( get_children( array( 'post_parent' => $post->post_parent, 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image', 'order' => 'ASC', 'orderby' => 'menu_order ID' ) ) );
-    return get_children( array(
+    $ordered_attachments = get_children( array(
         'numberposts' => -1,
         'post_parent' => $post->ID,
         'post_type' => 'attachment',
@@ -1291,6 +1530,12 @@ function amt_get_ordered_attachments( $post ) {
         'orderby' => 'menu_order ID'
         )
     );
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $ordered_attachments, $group='add-meta-tags' );
+
+    return $ordered_attachments;
 }
 
 
@@ -1310,20 +1555,36 @@ function amt_get_ordered_attachments( $post ) {
  *
  */
 function amt_get_permalink_for_multipage( $post ) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_permalink_for_multipage', $post);
+    $permalink = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $permalink !== false ) {
+        return $permalink;
+    }
+
+    $permalink = '';
+
     $pagenum = get_query_var( 'page' );
     // Content is multipage
     if ( $pagenum && $pagenum > 1 ) {
         // Not using clean URLs -> Add query argument to the URL (eg: ?page=2)
         if ( '' == get_option('permalink_structure') || in_array( $post->post_status, array('draft', 'pending')) ) {
-            return esc_url( add_query_arg( 'page', $pagenum, get_permalink($post->ID) ) );
+            $permalink = esc_url( add_query_arg( 'page', $pagenum, get_permalink($post->ID) ) );
         // Using clean URLs
         } else {
-            return trailingslashit( get_permalink($post->ID) ) . user_trailingslashit( $pagenum, 'single_paged');
+            $permalink = trailingslashit( get_permalink($post->ID) ) . user_trailingslashit( $pagenum, 'single_paged');
         }
     // Content is not paged
     } else {
-        return get_permalink($post->ID);
+        $permalink = get_permalink($post->ID);
     }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $permalink, $group='add-meta-tags' );
+
+    return $permalink;
 }
 
 
@@ -1415,6 +1676,13 @@ function amt_get_posts_page_id() {
  * Returns an array with URLs to players for some embedded media.
  */
 function amt_get_embedded_media( $post ) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_embedded_media', $post);
+    $embedded_media_urls = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $embedded_media_urls !== false ) {
+        return $embedded_media_urls;
+    }
 
     // Post content pre-processing
 
@@ -1774,6 +2042,10 @@ function amt_get_embedded_media( $post ) {
     // Allow filtering of the embedded media array
     $embedded_media_urls = apply_filters( 'amt_embedded_media', $embedded_media_urls, $post->ID );
 
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $embedded_media_urls, $group='add-meta-tags' );
+
     //var_dump($embedded_media_urls);
     return $embedded_media_urls;
 }
@@ -1802,6 +2074,16 @@ function amt_iso8601_date( $mysqldate ) {
 }
 
 
+// Helper function that determines whether code that has to do with the
+// Metadata Review mode should be enabled.
+function amt_check_run_metadata_review_code($options) {
+    if ( $options["review_mode"] == "1" && current_user_can('create_users') ) {
+        return true;
+    }
+    return false;
+}
+
+
 /**
  * Custom meta tag highlighter.
  *
@@ -1810,28 +2092,44 @@ function amt_iso8601_date( $mysqldate ) {
 function amt_metatag_highlighter( $metatags ) {
 
     // Convert special chars, but leave quotes.
+    // Required for pre box.
     $metatags = htmlspecialchars($metatags, ENT_NOQUOTES);
 
-    preg_match_all('#([^\s]+="[^"]+?)"#i', $metatags, $matches);
-    if ( !$matches ) {
+    if ( ! apply_filters('amt_metadata_review_mode_enable_highlighter', true) ) {
         return $metatags;
     }
 
+    // Find all property/value pairs
+    preg_match_all('#([^\s]+="[^"]+?)"#i', $metatags, $matches);
+    if ( ! $matches ) {
+        return $metatags;
+    }
+
+    // Highlight properties and values.
     //var_dump($matches[0]);
     foreach ($matches[0] as $match) {
-        $highlighted = preg_replace('#^([^=]+)="(.+)"$#i', '<span style="font-weight:bold;color:black;">$1</span>="<span style="color:blue;">$2</span>"', $match);
+        $highlighted = preg_replace('#^([^=]+)="(.+)"$#i', '<span class="amt-ht-attribute">$1</span>="<span class="amt-ht-value">$2</span>"', $match);
         //var_dump($highlighted);
         $metatags = str_replace($match, $highlighted, $metatags);
     }
 
     // Highlight 'itemscope'
-    $metatags = str_replace('itemscope', '<span style="font-weight: bold; color: #B90746;">itemscope</span>', $metatags);
+    $metatags = str_replace('itemscope', '<span class="amt-ht-itemscope">itemscope</span>', $metatags);
+
+    // Highlight Schema.org object
+    //$metatags = preg_replace('#: ([a-zA-Z0-9]+) --&gt;#', ': <span class="amt-ht-important">$1</span> --&gt;', $metatags);
+
+    // Highlight HTML comments
+    $metatags = str_replace('&lt;!--', '<span class="amt-ht-comment">&lt;!--', $metatags);
+    $metatags = str_replace('--&gt;', '--&gt;</span>', $metatags);
 
     // Do some conversions
     $metatags =  wp_pre_kses_less_than( $metatags );
     // Done by wp_pre_kses_less_than()
     //$metatags = str_replace('<meta', '&lt;meta', $metatags);
     //$metatags = str_replace('/>', '/&gt;', $metatags);
+//$metatags = str_replace('<br />', '___', $metatags);
+//$metatags = str_replace('___', '<br />', $metatags);
 
     return $metatags;
 }
@@ -1868,6 +2166,14 @@ function amt_get_language_site($options) {
 // Returns content locale
 // NOTE: SHOULD NOT BE USED ON ARCHIVES
 function amt_get_language_content($options, $post) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_language_content', $post);
+    $language = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $language !== false ) {
+        return $language;
+    }
+
     $language = get_bloginfo('language');
     // If set, the 'global_locale' setting overrides WordPress.
     if ( ! empty( $options["global_locale"] ) ) {
@@ -1880,6 +2186,11 @@ function amt_get_language_content($options, $post) {
     }
     // Allow filtering of the content language
     $language = apply_filters( 'amt_language_content', $language, $post );
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $language, $group='add-meta-tags' );
+
     return $language;
 }
 
@@ -2002,6 +2313,20 @@ function amt_get_schemaorg_itemref( $object_type ) {
         $itemref_attrib = '';
     }
     return $itemref_attrib;
+}
+
+
+// Returns a string suitable for a Schema.org ID
+// Absolute or relative URLs are fine
+function amt_get_schemaorg_entity_id( $object_type ) {
+    return sprintf('#amt-%s', $object_type);
+}
+
+
+// Returns a string suitable for as a full 'itemid attribute together with itemscope.
+// Absolute or relative URLs are fine
+function amt_get_schemaorg_entity_id_as_itemid( $object_type ) {
+    return sprintf(' itemid="%s"', amt_get_schemaorg_entity_id( $object_type ));
 }
 
 
@@ -2294,9 +2619,7 @@ function amt_get_breadcrumbs( $user_options ) {
     // Get plugin options
     $plugin_options = get_option("add_meta_tags_opts");
     // Get post object
-    $post = get_queried_object();
-    // Allow filtering of the $post object.
-    $post = apply_filters('amt_get_queried_object', $post, $plugin_options);
+    $post = amt_get_queried_object($plugin_options);
 
     // Default Options
     $default_options = array(
@@ -2340,7 +2663,7 @@ function amt_get_breadcrumbs( $user_options ) {
             if ( ! empty($options['separator']) ) {
                 $bc_arr['bc-sep-' . $counter] = '<span class="separator separator-' . $counter . '"> ' . esc_attr($options['separator']) . ' </span>';
             }
-            $bc_arr['bc-item-' . $counter] = '<li class="list-item list-item-' . $counter . '" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a class="breadcrumb breadcrumb-' . $counter . '" itemprop="item" title="' . esc_attr( get_the_title($ancestor) ) . '" href="' . esc_url_raw( get_permalink($ancestor) ) . '"><span itemprop="name">' .esc_attr( get_the_title($ancestor) ) . '</span></a></li>';
+            $bc_arr['bc-item-' . $counter] = '<li class="list-item list-item-' . $counter . '" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a class="breadcrumb breadcrumb-' . $counter . '" itemprop="item" title="' . esc_attr( strip_tags( get_the_title($ancestor) ) ) . '" href="' . esc_url_raw( get_permalink($ancestor) ) . '"><span itemprop="name">' .esc_attr( strip_tags( get_the_title($ancestor) ) ) . '</span></a></li>';
             //$bc_arr['bc-item-' . $counter . '-pos'] = '<meta itemprop="position" content="' . $counter . '" />';
             $counter++;
         }
@@ -2352,9 +2675,9 @@ function amt_get_breadcrumbs( $user_options ) {
             $bc_arr['bc-sep-' . $counter] = '<span class="separator separator-' . $counter . ' separator-current"> ' . esc_attr($options['separator']) . ' </span>';
         }
         if ( $options['show_last_as_link'] ) {
-            $bc_arr['bc-item-' . $counter] = '<li class="list-item list-item-' . $counter . ' list-item-current" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a class="breadcrumb breadcrumb-' . $counter . ' breadcrumb-current" itemprop="item" title="' . esc_attr( get_the_title($post) ) . '" href="' . esc_url_raw( get_permalink($post) ) . '"><span itemprop="name">' .esc_attr( get_the_title($post) ) . '</span></a></li>';
+            $bc_arr['bc-item-' . $counter] = '<li class="list-item list-item-' . $counter . ' list-item-current" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><a class="breadcrumb breadcrumb-' . $counter . ' breadcrumb-current" itemprop="item" title="' . esc_attr( strip_tags( get_the_title($post) ) ) . '" href="' . esc_url_raw( get_permalink($post) ) . '"><span itemprop="name">' .esc_attr( strip_tags( get_the_title($post) ) ) . '</span></a></li>';
         } else {
-            $bc_arr['bc-item-' . $counter] = '<li class="list-item list-item-' . $counter . ' list-item-current" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><span itemprop="item"><span itemprop="name">' .esc_attr( get_the_title($post) ) . '</span></span></li>';
+            $bc_arr['bc-item-' . $counter] = '<li class="list-item list-item-' . $counter . ' list-item-current" itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem"><span itemprop="item"><span itemprop="name">' .esc_attr( strip_tags( get_the_title($post) ) ) . '</span></span></li>';
         }
         //$bc_arr['bc-item-' . $counter . '-pos'] = '<meta itemprop="position" content="' . $counter . '" />';
         $counter++;
@@ -2369,11 +2692,37 @@ function amt_get_breadcrumbs( $user_options ) {
 }
 
 
+//
+// Full meta tag boxes helper functions
+//
+
 // Meta Tag Sets
-function amt_get_full_meta_tag_sets() {
+function amt_get_full_meta_tag_sets( $default ) {
+
+    // Default meta tag sets
+    $default_meta_tag_sets = array();
+
+    $default_meta_tag_sets['Robots - Generic'] = array(
+        '<meta name="robots" content="all" />',
+    );
+    $default_meta_tag_sets['Robots - NoIndex, NoFollow'] = array(
+        '<meta name="robots" content="noindex,nofollow" />',
+    );
+    $default_meta_tag_sets['Robots - NoIndex, Follow'] = array(
+        '<meta name="robots" content="noindex,follow" />',
+    );
+    $default_meta_tag_sets['Robots - No extra services'] = array(
+        '<meta name="robots" content="noodp,noarchive,notranslate,noimageindex" />',
+    );
+    $default_meta_tag_sets['Hreflang - Link to alternate translation'] = array(
+        '<link rel="alternate" hreflang="ENTER_LOCALE_HERE" href="ENTER_PAGE_URL_HERE" />',
+    );
+    $default_meta_tag_sets['Canonical - Custom canonical link'] = array(
+        '<link rel="canonical" href="ENTER_PAGE_URL_HERE" />',
+    );
 
     // Check if we have any meta tag sets.
-    $meta_tag_sets = apply_filters( 'amt_full_meta_tag_sets', array() );
+    $meta_tag_sets = apply_filters( 'amt_full_meta_tag_sets', $default_meta_tag_sets );
     if ( empty($meta_tag_sets) ) {
         return;
     }
@@ -2382,36 +2731,78 @@ function amt_get_full_meta_tag_sets() {
     $html .= PHP_EOL . '<option value="0">'.__('Select a meta tag group', 'add-meta-tags').'</option>' . PHP_EOL;
     foreach ( array_keys($meta_tag_sets) as $key ) {
         $key_slug = str_replace(' ', '_', strtolower($key));
-        $html .= '<option value="'.$key_slug.'">'.$key.'</option>' . PHP_EOL;
+        $html .= '<option value="' . esc_attr($key_slug) . '">' . esc_attr($key) . '</option>' . PHP_EOL;
     }
     $html .= PHP_EOL . '</select>' . PHP_EOL;
+
+    $html .= PHP_EOL . '<input class="button" id="full_meta_tag_sets_reset" name="full_meta_tag_sets_reset" type="submit" value="'.__('Reset', 'add-meta-tags').'" />' . PHP_EOL;
+
+    $html .= PHP_EOL . ' &mdash; (<a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Plugin_Functionality_Customization#Create-Pre-Defined-Full-Meta-Tag-Sets">' . __('Customize these sets', 'add-meta-tags') . '</a>)' . PHP_EOL;
+
+    $reset_msg = __('Undo your changes in the full meta tags box?', 'add-meta-tags');
 
     $html .='
 <script>
 jQuery(document).ready(function(){
+
+    // On selector change
     jQuery("#full_meta_tag_sets_selector").change(function(){
+        // Store current full meta tags box contents
+        var cur_contents = jQuery("#amt_custom_full_metatags").val();
+        // Get selector value
         var selection = jQuery(this).val();
         if (selection == "0") {
             var output = \'\';
     ';
 
+    // Iterate through the meta tag sets and set the output value accordingly.
     foreach ( $meta_tag_sets as $key => $value ) {
         $key_slug = str_replace(' ', '_', strtolower($key));
+        $additional_metatags = implode("\n", $value);
         $html .= '
-        } else if (selection == "'.$key_slug.'") {
-            var output = \''.implode('\'+"\n"+\'', $value).'\';
+        } else if (selection == "' . esc_attr($key_slug) . '") {
+            var output = ' . json_encode( html_entity_decode( $additional_metatags ) ) . ';
         ';
     }
 
     $html .='
         }
-        jQuery("#amt_custom_full_metatags").val(output);
+        // Replace text area contents.
+        if ( cur_contents == "" ) {
+            // If the full meta tags box is currently empty
+            jQuery("#amt_custom_full_metatags").val(output);
+        } else {
+            // If the full meta tags box already contains data
+            jQuery("#amt_custom_full_metatags").val(cur_contents.trim() + "\n" + output);
+        }
     });
+
+    // On Reset button click
+    jQuery("#full_meta_tag_sets_reset").click(function() {
+        // Store current full meta tags box contents
+        var cur_contents = jQuery("#amt_custom_full_metatags").val();
+        if ( cur_contents != "" ) {
+            // alert( "Handler for .click() called." );
+            var rchoice = confirm(' . json_encode($reset_msg) . ');
+            if (rchoice == true) {
+                //jQuery("#amt_custom_full_metatags").val(\'\');
+                jQuery("#amt_custom_full_metatags").val(' . json_encode( html_entity_decode( $default ) ) . ');
+                jQuery("#full_meta_tag_sets_selector").val("0");
+            }
+        }
+        return false;
+    });
+
 });
 </script>
     ';
 
-    return '<br />' . __('Replace meta tags with:', 'add-meta-tags') . $html . '<br />';
+// Testing
+// jQuery("#amt_custom_full_metatags").html(' . json_encode($default) . ').text();
+// jQuery("#amt_custom_full_metatags").val("' . html_entity_decode($default, ENT_NOQUOTES) . '");
+// jQuery("#amt_custom_full_metatags").html("' . html_entity_decode($default, ENT_NOQUOTES) . '").text();
+
+    return '<br />' . __('Append a meta tag set:', 'add-meta-tags') . $html . '<br />';
 }
 
 
@@ -2461,6 +2852,10 @@ function amt_set_transient_cache($post, $options, $metadata_arr, $where='') {
     if ( $post->ID <= 0 ) {
         return;
     }
+    // Cache metadata only for published content
+    if ( get_post_status($post->ID) != 'publish' ) {
+        return;
+    }
     // Transient expiration
     $transient_expiration = absint($options['transient_cache_expiration']);
     if ( $transient_expiration == "0" || ! is_numeric($transient_expiration) ) {
@@ -2478,7 +2873,7 @@ function amt_get_transient_name($post_id, $where) {
     // Content: MD5( ID, $where )
     if ( absint($post_id) > 0 ) {
         // DO NOT USE is_singular() here because it may be called by 'save_post' actions etc
-        $to_hash[] = $post_id;
+        $to_hash[] = absint($post_id);
         $to_hash[] = $where;
 
         // Check whether the ID is the same as the front/index static page's ID
@@ -2516,7 +2911,6 @@ function amt_get_transient_name($post_id, $where) {
 
 // Delete transient cache
 function amt_delete_transient_cache_for_post($post_id) {
-//var_dump($aa);
     $locations = array('head', 'footer', 'content');
     foreach ( $locations as $where ) {
         $transient_name = amt_get_transient_name($post_id, $where);
@@ -2525,6 +2919,7 @@ function amt_delete_transient_cache_for_post($post_id) {
 }
 
 // Delete all transients
+// WORKS ONLY WHEN TRANSIENTS ARE STORED IN THE DATABASE
 function amt_delete_all_transient_metadata_cache($blog_id=null) {
     if ( is_null($blog_id) ) {
         $blog_id = get_current_blog_id();
@@ -2541,13 +2936,15 @@ function amt_delete_all_transient_metadata_cache($blog_id=null) {
     $options_table = $wpdb->get_blog_prefix($blog_id) . 'options';
 
     // Construct SQL query that counts the AMT transient cache entries
+    // Here we do not count the timeout entries: _transient_timeout_amt_* since they are not meant to be separate cached objects.
     $sql = "SELECT COUNT(*) FROM $options_table WHERE option_name LIKE '\_transient\_amt\_%'";
 
     // Get number of cache entries
     $nr_cache_entries = $wpdb->get_var($sql);
 
     // Construct SQL query that deletes the cached metadata
-    $sql = "DELETE FROM $options_table WHERE option_name LIKE '\_transient\_amt\_%'";
+    // Here we also delete the timeout entries: _transient_timeout_amt_*
+    $sql = "DELETE FROM $options_table WHERE option_name LIKE '\_transient\_amt\_%' OR option_name LIKE '\_transient\_timeout\_amt\_%'";
 
     // Execute query
     $wpdb->query($sql);
@@ -2574,6 +2971,7 @@ function amt_count_transient_metadata_cache_entries($blog_id=null) {
     $options_table = $wpdb->get_blog_prefix($blog_id) . 'options';
 
     // Construct SQL query that counts the AMT transient cache entries
+    // Here we do not count the timeout entries: _transient_timeout_amt_* since they are not meant to be separate cached objects.
     $sql = "SELECT COUNT(*) FROM $options_table WHERE option_name LIKE '\_transient\_amt\_%'";
 
     // Get number of cache entries
@@ -2592,6 +2990,13 @@ function amt_count_transient_metadata_cache_entries($blog_id=null) {
 // Returns the title that should be used in the title HTML element
 function amt_get_title_for_title_element($options, $post) {
     
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_title_for_title_element', $post);
+    $title_element_value = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $title_element_value !== false ) {
+        return $title_element_value;
+    }
+
     // Variables
     // #entity_title#, #page#, #page_total#, #site_name#, #site_tagline#
     
@@ -2663,14 +3068,26 @@ function amt_get_title_for_title_element($options, $post) {
     $title_element_title_templates = apply_filters('amt_titles_title_element_templates', $default_title_element_title_templates, $post);
 
     // Always use custom title if it is set
-    return amt_internal_get_title($options, $post, $title_element_title_templates, $force_custom_title_if_set=true, $caller_is_metadata_generator=false);
+    $title_element_value = amt_internal_get_title($options, $post, $title_element_title_templates, $force_custom_title_if_set=true, $caller_is_metadata_generator=false);
 
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $title_element_value, $group='add-meta-tags' );
+
+    return $title_element_value;
 }
 
 
 // Returns the title that should be used in the title HTML element
 function amt_get_title_for_metadata($options, $post) {
     
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_title_for_metadata', $post);
+    $metadata_title_value = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $metadata_title_value !== false ) {
+        return $metadata_title_value;
+    }
+
     // Variables
     // #entity_title#, #page#, #page_total#, #site_name#, #site_tagline#
     
@@ -2745,7 +3162,13 @@ function amt_get_title_for_metadata($options, $post) {
         $force_custom_title = true;
     }
 
-    return amt_internal_get_title($options, $post, $metadata_title_templates, $force_custom_title_if_set=$force_custom_title, $caller_is_metadata_generator=true);
+    $metadata_title_value = amt_internal_get_title($options, $post, $metadata_title_templates, $force_custom_title_if_set=$force_custom_title, $caller_is_metadata_generator=true);
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $metadata_title_value, $group='add-meta-tags' );
+
+    return $metadata_title_value;
 }
 
 
@@ -2876,7 +3299,7 @@ function amt_internal_get_title($options, $post, $title_templates, $force_custom
     // Note: might also contain a listing of posts which may be paged, so use amt_process_paged()
     } elseif ( amt_is_static_front_page() ) {
         // Entity title
-        $entity_title = get_the_title($post->ID);
+        $entity_title = strip_tags( get_the_title($post->ID) );
         if ( ! empty($custom_title) && $force_custom_title_if_set ) {
             $custom_title = str_replace('%title%', $entity_title, $custom_title);
             $entity_title = $custom_title;
@@ -2893,7 +3316,7 @@ function amt_internal_get_title($options, $post, $title_templates, $force_custom
     // The posts index page - a static page displaying the latest posts
     } elseif ( amt_is_static_home() ) {
         // Entity title
-        $entity_title = get_the_title($post->ID);
+        $entity_title = strip_tags( get_the_title($post->ID) );
         if ( ! empty($custom_title) && $force_custom_title_if_set ) {
             $custom_title = str_replace('%title%', $entity_title, $custom_title);
             $entity_title = $custom_title;
@@ -2997,7 +3420,10 @@ function amt_internal_get_title($options, $post, $title_templates, $force_custom
     } elseif ( is_singular() ) {
 
         // Entity title
-        $entity_title = get_the_title($post->ID);
+        // In some cases, like EDD downloads, get_the_title() also returns escaped HTML. Use strip_tags().
+        $entity_title = strip_tags( get_the_title($post->ID) );
+        // Alternatively, use the_title_attribute(). See: https://codex.wordpress.org/Function_Reference/the_title_attribute
+        //$entity_title = the_title_attribute( array( 'before'=>'', 'after'=>'', 'echo'=>false, $post->ID) );
         if ( ! empty($custom_title) && $force_custom_title_if_set ) {
             $custom_title = str_replace('%title%', $entity_title, $custom_title);
             $entity_title = $custom_title;
@@ -3077,14 +3503,19 @@ function amt_internal_get_title($options, $post, $title_templates, $force_custom
 
     } elseif ( empty($entity_title_template) ) {
 
-        // TODO: fix this mess. summarize the logic in a comment
+        // If the caller is a metadata generator, then the title cannot be determined otherwise.
+        // So, if an $entity_title has been found we return it.
         if ( $caller_is_metadata_generator ) {
             // If a metadata generator requested a title, but a template was
-            // not found, return an error message as the title.
-            //
-            // TODO: Maybe it should just set $title to an empty string.
-            //$title = 'TITLE TEMPLATE NOT FOUND';
-            $title = '';
+            // not found, return an error message as the title, unless the
+            // $entity_title is not empty, in which case set the title to it as is.
+            if ( ! empty($entity_title) ) {
+                $title = $entity_title;
+            } else {
+                // TODO: Maybe it should just set $title to an empty string.
+                //$title = 'TITLE TEMPLATE NOT FOUND';
+                $title = '';
+            }
         } else {
             // If the title was requested for the 'title' HTML element, but a template
             //was not found, return an empty string, so that the default WordPress title is used.
@@ -3180,3 +3611,311 @@ function amt_bp_get_profile_field_data( $internal_profile_property, $user_id, $x
     }
     return '';
 }
+
+
+
+//
+// Content & Metadata Overview & Analysis
+//
+
+
+function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_block_footer, $metadata_block_content_filter) {
+    // Analysis is appended only o content pages
+    if ( ! is_singular() ) {
+        return $default_text;
+    }
+    // Check the filter based switch
+    if ( ! apply_filters('amt_metadata_analysis_enable', true) ) {
+        return $default_text;
+    }
+
+    //
+    // Collect data
+    //
+
+    $options = amt_get_options();
+    $post = amt_get_queried_object($options);
+
+    if ( ! isset($post->ID) || $post->ID <= 0 ) {
+        return $default_text;
+    }
+
+    // Content and stats
+    $post_content = strtolower( strip_shortcodes( strip_tags( $post->post_content ) ) );
+    $post_content = preg_replace('#\[[^\]]+\]#', '', $post_content);
+    $post_content_length = strlen($post_content);
+    //var_dump($post_content);
+    // Total words
+    if ( function_exists('wordstats_words') ) {
+        $post_word_count = wordstats_words($post_content);  // provided by the word-statistics-plugin by FD
+    } else {
+        $post_word_count = str_word_count($post_content);
+    }
+    // Total sentences
+    if ( function_exists('wordstats_sentences') ) {
+        $post_sentence_count = wordstats_sentences($post_content);  // provided by the word-statistics-plugin by FD
+    } else {
+        $post_sentence_count = preg_match_all('/[.!?\r]/', $post_content, $dummy );
+    }
+    // Total syllables
+    // TODO: Find better function
+    $post_syllable_count = preg_match_all('/[aeiouy]/', $post_content, $dummy );
+
+    // Titles
+    // Original
+    $post_title = strtolower( strip_tags(get_the_title($post->ID)) );
+    // Title HTML element
+    if ( $options['enable_advanced_title_management'] == '1' ) {
+        // If Advanced Title management is enabled, use this directly:
+        $post_title_html_element = strtolower( amt_get_title_for_title_element($options, $post) );
+    } else {
+        if ( version_compare( get_bloginfo('version'), '4.4', '>=' ) ) {
+            // Since WP 4.4
+            // - https://make.wordpress.org/core/2015/10/20/document-title-in-4-4/
+            //$post_title_html_element = strtolower( apply_filters('document_title_parts', array('title' => $post_title) ) );
+            //$post_title_html_element = wp_get_document_title();
+            $post_title_html_element = strtolower( get_wp_title_rss() );
+        } else {
+            // Reverting back to the one argument version of the fitlering function.
+            //$post_title_html_element = strtolower( apply_filters('wp_title', $post_title) );
+            // Until testing is performed on old WP versions we just use post title
+            $post_title_html_element = $post_title;
+        }
+    }
+    //var_dump($post_title_html_element);
+    // Title in metadata
+    $post_title_metadata = strtolower( amt_get_title_for_metadata($options, $post) );
+    //var_dump($post_title_metadata);
+
+    // URL
+    $post_url = str_replace( get_bloginfo('url'), '', amt_get_permalink_for_multipage($post) );
+    //var_dump($post_url);
+
+    // Description
+    $description = strtolower( preg_replace('#^.*content="([^"]+)".*$#', '$1', $metadata_block_head['basic:description']) );
+    //var_dump($description);
+    // Keywords
+    $keywords_content = strtolower( preg_replace('#^.*content="([^"]+)".*$#', '$1', $metadata_block_head['basic:keywords']) );
+    $keywords = explode( ',', str_replace(', ', ',', $keywords_content) );
+    //var_dump($keywords);
+
+    // Keyword matching pattern
+    //$keyword_matching_pattern = '#(?:%s)#';
+    //$keyword_matching_pattern = '#(?:%s)[[:^alpha:]]#';
+    //$keyword_matching_pattern = '#(?:%s)[[:^alpha:]]?#';
+    $keyword_matching_pattern = '#(?:%s)(?:[[:^alpha:]]|$)#';
+    $keyword_matching_pattern = apply_filters('amt_metadata_analysis_keyword_matching_pattern', $keyword_matching_pattern);
+
+    // Whether to use topic keywords field or the keywords from the 'keywords' meta tag.
+    $use_keywords = false;
+
+    // First check for a field that contains topic keywords.
+    $topic_keywords_field_name = apply_filters('amt_metadata_analysis_topic_keywords_field', 'topic_keywords');
+    $topic_keywords_field_value = get_post_meta( $post->ID, $topic_keywords_field_name, true );
+    if ( ! empty($topic_keywords_field_value) ) {
+        $topic_keywords = explode( ',', str_replace(', ', ',', $topic_keywords_field_value) );
+    } else {
+        $topic_keywords = $keywords;
+        $use_keywords = true;
+        //var_dump($topic_keywords);
+    }
+
+    $BR = PHP_EOL;
+
+    $output = $default_text . $BR . $BR;
+    //$output .= $BR . '<span class="">Text analysis</span>' . $BR;
+
+    $output .= 'Metadata Overview' . $BR;
+    $output .= '================='. $BR;
+
+    //$output .= 'This overview has been generated by the Add-Meta-Tags plugin for statistical and' . $BR;
+    //$output .= 'informational purposes only. Please do not modify or base your work upon this report.' . $BR . $BR;
+    $output .= 'NOTICE: Add-Meta-Tags does not provide SEO advice and does not rate your content.' . $BR;
+    $output .= 'This <a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Overview">overview</a> has been generated for statistical and informational purposes only.' . $BR;
+    //$output .= '<a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/FAQ#Is-Add-Meta-Tags-an-SEO-plugin">Read more</a> about the mentality upon which the development of this plugin has been based.' . $BR;
+    //$output .= 'Please use this statistical information to identify keyword overstuffing' . $BR;
+    //$output .= 'and stay away from following any patterns or being bound by the numbers.' . $BR . $BR;
+
+    if ( $use_keywords ) {
+        $output .= $BR . sprintf('This overview has been based on post keywords, because the Custom Field \'<em>%s</em>\' could not be found.', $topic_keywords_field_name) . $BR . $BR;
+    } else {
+        $output .= $BR . sprintf('This overview has been based on <em>topic keywords</em> retrieved from the Custom Field \'<em>%s</em>\'.', $topic_keywords_field_name) . $BR . $BR;
+    }
+
+    $output .= 'Keyword Analysis' . $BR;
+    $output .= '----------------' . $BR;
+
+    $output .= '<table class="amt-ht-table">';
+    $output .= '<tr> <th>Topic Keyword</th> <th>Content</th> <th>Description</th> <th>Keywords</th> <th>Post Title</th> <th>HTML title</th> <th>Metadata titles</th> <th>Post URL</th> </tr>';
+
+    foreach ($topic_keywords as $topic_keyword) {
+        $output .= sprintf( '<tr> <td>%s</td>', $topic_keyword );
+
+        $is_into = array();
+
+        // Check content
+        $is_into['content'] = '';
+        $occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $post_content, $matches );
+        if ( $occurrences ) {
+            // Only for content
+            $topic_keyword_desnity = round( (($occurrences / $post_word_count) * 100), 2);
+            $output .= sprintf( ' <td>%d (%.2f%%)</td>', $occurrences, $topic_keyword_desnity );
+        } else {
+            $output .= '<td> </td>';
+        }
+
+        // Check description
+        $occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $description, $matches );
+        if ( $occurrences ) {
+            $output .= sprintf( ' <td>%d</td>', $occurrences );
+        } else {
+            $output .= '<td> </td>';
+        }
+
+        // Check keywords
+        if ( $use_keywords ) {
+            $output .= '<td>N/A</td>';
+            $is_into['keywords'] = 'N/A';
+        } elseif ( in_array($topic_keyword, $keywords) ) {
+            // Always 1
+            $output .= '<td>1</td>';
+        } else {
+            $output .= '<td> </td>';
+        }
+
+        // Check original title
+        $occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $post_title, $matches );
+        if ( $occurrences ) {
+            $output .= sprintf( ' <td>%d</td>', $occurrences );
+        } else {
+            $output .= '<td> </td>';
+        }
+
+
+        // Check title element
+        $occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $post_title_html_element, $matches );
+        if ( $occurrences ) {
+            $output .= sprintf( ' <td>%d</td>', $occurrences );
+        } else {
+            $output .= '<td> </td>';
+        }
+
+        // Check metadata titles
+        $occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $post_title_metadata, $matches );
+        if ( $occurrences ) {
+            $output .= sprintf( ' <td>%d</td>', $occurrences );
+        } else {
+            $output .= '<td> </td>';
+        }
+
+        // Check post URL
+        $occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $post_url, $matches );
+        if ( $occurrences ) {
+            $output .= sprintf( ' <td>%d</td>', $occurrences );
+        } else {
+            $output .= '<td> </td>';
+        }
+
+        // Close row
+        $output .= ' </tr>' . $BR;
+
+    }
+
+    $output .= '</table>' . $BR;
+
+
+    // Keyword Distribution Graph
+
+    $output .= 'Keyword Distribution Graph' . $BR;
+    $output .= '--------------------------'. $BR;
+
+    $output .= 'The following text based graph shows how the <em>topic keywords</em> are distributed within your content.'. $BR;
+    $output .= 'You can use it to identify incidents of keyword overstuffing.'. $BR . $BR;
+
+    //$output .= $BR . $BR;
+    $total_bars = 39;   // zero based
+    $step = $post_content_length / $total_bars;
+
+    //$output .= $BR . $post_content_length . '  ' . $step . $BR;
+
+    $max_weight = null;
+    $weights = array();
+    for ($x = 0; $x <= $total_bars; $x++) {
+        $weights[$x] = 1;
+    }
+    foreach ($topic_keywords as $topic_keyword) {
+        // ALTERNATIVE: use preg_match_all with PREG_OFFSET_CAPTURE -- http://php.net/manual/en/function.preg-match-all.php
+        $topic_keyword_occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $post_content, $matches, PREG_OFFSET_CAPTURE );
+        //var_dump($matches);
+        if ( ! empty($topic_keyword_occurrences) ) {
+            foreach ($matches[0] as $match) {
+                $pos = $match[1];
+                $step_index = absint($pos / $step);
+                $weights[$step_index] = $weights[$step_index] + 1;
+                if ($weights[$step_index] > $max_weight) {
+                    $max_weight = $weights[$step_index];
+                }
+                // Debug
+                //$output .= sprintf('kw: %s, pos: %s, step index: %s, step weight: %s', $topic_keyword, $pos, $step_index, $weights[$step_index]) . $BR;
+            }
+        }
+    }
+
+    //var_dump($weights);
+    //for ($x = $max_weight - 1; $x >= 0; $x--) { // ALTBASELINE: for * based baseline
+    for ($x = $max_weight - 1; $x >= 1; $x--) {
+        $line = '';
+        for ($y = 0; $y <= $total_bars; $y++) {
+            if ($x == 0) {
+                // ALTBASELINE: currently not used
+                $line .= '*';   // base line
+            } elseif ($weights[$y] > $x) {
+                $line .= '#';
+            } else {
+                $line .= ' ';
+            }
+        }
+        $output .= $line . $BR;
+    }
+    // ALTBASELINE: currently this text based ruler is used.
+    $output .= str_repeat('---------+', (($total_bars + 1) / 10)) . $BR;
+
+    $output .= $BR . '<code>#</code>: indicates a single occurrence of a <em>topic keyword</em>.'. $BR;
+
+
+    // Stats and scores by algos provided by the word-statistics-plugin by FD
+    if ( function_exists('wordstats_words') ) {
+
+        // Readability Tests
+        $output .= $BR . 'Readability Scores and Text Statistics' . $BR;
+        $output .=       '--------------------------------------' . $BR;
+
+        $output .= 'These readability scores and text statistics are based on algorithms provided by the <em>FD Word Statistics Plugin</em>.' . $BR . $BR;
+
+        if ( function_exists('wordstats_words') ) {
+            $output .= sprintf(' &#9679; Total words: <strong>%d</strong>', wordstats_words($post_content) ) . $BR;
+        }
+        if ( function_exists('wordstats_sentences') ) {
+            $output .= sprintf(' &#9679; Total sentences: <strong>%d</strong>', wordstats_sentences($post_content) ) . $BR;
+        }
+        if ( function_exists('wordstats_flesch_kincaid') ) {
+            $output .= sprintf(' &#9679; Flesch-Kincaid US grade level: <strong>%.1f</strong> <em>(For instance, a score of 9.3 means suitable for a 9th grade student in the US, <a target="_blank" href="%s">read more</a>.)</em>', wordstats_flesch_kincaid($post_content), 'https://en.wikipedia.org/wiki/Flesch%E2%80%93Kincaid_readability_tests#Flesch.E2.80.93Kincaid_grade_level' ) . $BR;
+        }
+        if ( function_exists('wordstats_flesch') ) {
+            $output .= sprintf(' &#9679; Flesch reading ease: <strong>%.1f%%</strong> <em>(avg 11 y.o. student: 90-100%%, 13-15 y.o. students: 60-70%%, university graduates: 0-30%%, <a target="_blank" href="%s">read more</a>.)</em>', wordstats_flesch($post_content), 'https://en.wikipedia.org/wiki/Flesch%E2%80%93Kincaid_readability_tests#Flesch_reading_ease' ) . $BR;
+        }
+        if ( function_exists('wordstats_fog') ) {
+            $output .= sprintf(' &#9679; Gunning fog index: <strong>%.1f</strong> <em>(wide audience: < 12, near universal understanding: < 8, <a target="_blank" href="%s">read more</a>.)</em>', wordstats_fog($post_content), 'https://en.wikipedia.org/wiki/Gunning_fog_index' ) . $BR;
+        }
+
+        $output .= $BR;
+
+    } else {
+        $output .= $BR . $BR . 'Note: There is experimental support for <em>FD Word Statistics Plugin</em>.';
+        $output .= $BR . 'If installed, you can get some readability scores and text statistics here.' . $BR . $BR;
+    }
+
+    return $output;
+}
+
+

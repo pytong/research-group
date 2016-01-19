@@ -29,7 +29,7 @@ msgstr ""
 "Project-Id-Version: Add-Meta-Tags translations\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-11-28 19:28+0200\n"
-"PO-Revision-Date: 2015-12-13 09:50+0000\n"
+"PO-Revision-Date: 2015-12-14 10:33+0000\n"
 "Last-Translator: BouRock\n"
 "Language-Team: Turkish (Turkey) (http://www.transifex.com/codetrax/add-meta-tags/language/tr_TR/)\n"
 "MIME-Version: 1.0\n"
@@ -967,13 +967,13 @@ msgstr "Üretilen metadata tamdır ve nakliye ile ilgili bilgiler hariç, ürün
 msgid ""
 "Products with regular and sales prices are supported. Variable products and "
 "pages of product groups are also supported."
-msgstr ""
+msgstr "Düzenli ve satış ücretleri olan ürünler desteklenir. Ayrıca değişken ürünler ve ürün grupları sayfaları da desteklenir."
 
 #: amt-admin-panel.php:461
 msgid ""
 "The metadata generators for WooCommerce products should be considered "
 "stable. However, your comments and suggestions are welcome."
-msgstr ""
+msgstr "WooCommerce ürünleri için metadata üreticileri sağlam olarak dikkate alınmalıdır. Yine de, yorumlarınız ve önerileriniz hoş karşılanır."
 
 #: amt-admin-panel.php:463
 msgid "Metadata for Easy Digital Downloads"
@@ -1001,7 +1001,7 @@ msgid ""
 "If the <em>Extended Profiles</em> component has not been activated in "
 "BuddyPress, then metadata is generated based on the information found in the"
 " WordPress user profile."
-msgstr ""
+msgstr "Eğer <em>Genişletilmiş Profiller</em> bileşeni BuddyPress içinde etkinleştirilmediyse, o zaman WordPress kullanıcı profili içinde bulunan bilgiye dayalı metadata üretilir."
 
 #: amt-admin-panel.php:473
 msgid ""
@@ -1010,7 +1010,7 @@ msgid ""
 "documentation about BuddyPress</a> for more information about how to modify "
 "or extend the generated metadata, override the default field map or prevent "
 "profile metadata from being added to the profile page."
-msgstr ""
+msgstr "Üretilen metadata'nın nasıl değiştirildiği veya genişletildiği, varsayılan alan planını geçersiz kılma ya da profil metadata'sının profil sayfasına eklenmesini önlemek hakkında daha fazla bilgi için lütfen <a href=\"http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Custom_Content#Metadata-for-BuddyPress\" target=\"_blank\">BuddyPress hakkında viki belgelerine</a> danışın."
 
 #: amt-admin-panel.php:475
 msgid "How to fully take advantage of this feature:"
@@ -1057,7 +1057,7 @@ msgstr "Şimdilik, sadece bbPress forumları ve konuları için metadata'yı <a 
 #: amt-admin-panel.php:489
 msgid ""
 "Please, don't forget to contribute your customizations to this project!"
-msgstr ""
+msgstr "Lütfen özelleştirmelerinizle bu projeye katkıda bulunmayı unutmayın!"
 
 #: amt-admin-panel.php:494
 msgid "Extended Metadata"
@@ -1202,7 +1202,7 @@ msgstr "BuddyPress üye sayfası"
 msgid ""
 "This is an advanced option and should not be changed, unless you have "
 "consulted the integrated help for more information."
-msgstr ""
+msgstr "Bu gelişmiş bir seçenektir ve daha fazla bilgi için bütünleşik yardıma danışmadığınız sürece değiştirilmemelidir."
 
 #: amt-admin-panel.php:827 amt-admin-panel.php:830
 msgid "Basic Metadata"
@@ -1308,7 +1308,7 @@ msgid ""
 "Add-Meta-Tags supports the generation of metadata for products and other "
 "post types. Please enable any of the following generators of extended "
 "metadata."
-msgstr "Add-Meta-Tags, ürünler ve diğer yazı türleri için metadata üretimini destekler. Lütfen aşağıdaki herhangi bir gelişmiş metadata üreticisini etkinleştirin."
+msgstr "Add-Meta-Tags, ürünler ve diğer yazı türleri için metadata üretimini destekler. Lütfen aşağıdaki herhangi bir genişletilmiş metadata üreticisini etkinleştirin."
 
 #: amt-admin-panel.php:1150
 msgid "Metadata for WooCommerce products and product groups."
@@ -1334,7 +1334,7 @@ msgstr "bbPress için metadata."
 msgid ""
 "Please consult the integrated help for more information about these "
 "features."
-msgstr ""
+msgstr "Bu özellikler hakkında daha fazla bilgi için lütfen bütünleşik yardıma danışın."
 
 #: amt-admin-panel.php:1179 amt-admin-panel.php:1182
 msgid "Donations"
