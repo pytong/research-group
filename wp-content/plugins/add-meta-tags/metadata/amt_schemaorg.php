@@ -159,6 +159,13 @@ function amt_add_schemaorg_metadata_footer( $post, $attachments, $embedded_media
         return array();
     }
 
+    // Check for AMP page https://www.ampproject.org/
+    // For AMP pages we do not generate Schema.org microdata around the post content,
+    // but enforce the JSON+LD form.
+    if ( $do_auto_schemaorg && function_exists('is_amp_endpoint') && is_amp_endpoint() ) {
+        return array();
+    }
+
     $metadata_arr = array();
 
     if ( is_paged() ) {
@@ -455,6 +462,13 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         return $post_body;
     }
 
+    // Check for AMP page https://www.ampproject.org/
+    // For AMP pages we do not generate Schema.org microdata around the post content,
+    // but enforce the JSON+LD form.
+    if ( $do_auto_schemaorg && function_exists('is_amp_endpoint') && is_amp_endpoint() ) {
+        return $post_body;
+    }
+
     if ( is_feed() ) {
         return $post_body;
     }
@@ -501,7 +515,7 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
 
         // Scope BEGIN: Product: http://schema.org/Product
         $metadata_arr[] = '<!-- Scope BEGIN: Product -->';
-        $metadata_arr[] = '<div itemscope itemtype="http://schema.org/Product"' . amt_get_schemaorg_itemref('product') . '>';
+        $metadata_arr[] = '<div itemscope itemtype="http://schema.org/Product"' . amt_get_schemaorg_entity_id_as_itemid('product') . amt_get_schemaorg_itemref('product') . '>';
 
         // URL - Uses amt_get_permalink_for_multipage()
         $metadata_arr[] = '<meta itemprop="url" content="' . esc_url_raw( amt_get_permalink_for_multipage($post) ) . '" />';
@@ -519,10 +533,10 @@ function amt_add_schemaorg_metadata_content_filter( $post_body ) {
         // Description - We use the description defined by Add-Meta-Tags
         // Note: Contains multipage information through amt_process_paged()
         $content_desc = amt_get_content_description($post);
-        if ( empty($content_desc) ) {
-            // Use the post body as the description. Product objects do not support body text.
-            $content_desc = sanitize_text_field( amt_sanitize_description( $post_body ) );
-        }
+        //if ( empty($content_desc) ) {
+        //    // Use the post body as the description. Product objects do not support body text.
+        //    $content_desc = sanitize_text_field( amt_sanitize_description( $post_body ) );
+        //}
         if ( ! empty($content_desc) ) {
             $metadata_arr[] = '<meta itemprop="description" content="' . esc_attr( amt_process_paged( $content_desc ) ) . '" />';
         }
@@ -1551,7 +1565,16 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
 
     // Check if the microdata or the JSON-LD schema.org generator should be used.
     if ( $options["schemaorg_force_jsonld"] == "0" ) {
-        return array();
+
+        // Here we check for AMP page https://www.ampproject.org/
+        // For AMP pages, if the Schema.org microdata generator has been enabled,
+        // we enforce the JSON+LD form instead of microdata.
+        if ( $do_auto_schemaorg && function_exists('is_amp_endpoint') && is_amp_endpoint() ) {
+            // Do nothing and let it proceed with forced generation of JSON+LD Schema.org metadata.
+        } else {
+            return array();
+        }
+
     }
 
     $metadata_arr = array();
@@ -1829,6 +1852,9 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         // Schema.org type
         $metadata_arr['@type'] = 'Product';
 
+        // ID
+        $metadata_arr['@id'] = amt_get_schemaorg_entity_id('product');
+
         // URL - Uses amt_get_permalink_for_multipage()
         $metadata_arr['url'] = esc_url_raw( amt_get_permalink_for_multipage($post) );
 
@@ -1845,10 +1871,11 @@ function amt_add_jsonld_schemaorg_metadata_head( $post, $attachments, $embedded_
         // Description - We use the description defined by Add-Meta-Tags
         // Note: Contains multipage information through amt_process_paged()
         $content_desc = amt_get_content_description($post);
-        if ( empty($content_desc) ) {
-            // Use the post body as the description. Product objects do not support body text.
-            $content_desc = sanitize_text_field( amt_sanitize_description( $post_body ) );
-        }
+        //if ( empty($content_desc) ) {
+        //    // Use the post body as the description. Product objects do not support body text.
+        //    // TODO: ERROR here $post_body var does not exist
+        //    $content_desc = sanitize_text_field( amt_sanitize_description( $post_body ) );
+        //}
         if ( ! empty($content_desc) ) {
             $metadata_arr['description'] = esc_attr( amt_process_paged( $content_desc ) );
         }

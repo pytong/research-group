@@ -287,6 +287,45 @@ function amt_process_paged( $data ) {
 }
 
 
+// Function that cleans the content of the post
+// Removes HTML markup, expands or removes short codes etc.
+function amt_get_clean_post_content( $options, $post ) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_clean_post_content', $post);
+    $plain_text_processed = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $plain_text_processed !== false ) {
+        return $plain_text_processed;
+    }
+
+    // Early filter that lets dev define the post. This makes it possible to
+    // exclude specific parts of the post for the rest of the algorithm.
+    $initial_content = apply_filters( 'amt_get_the_excerpt_initial_content', $post->post_content, $post );
+
+    // First expand the shortcodes if the relevant setting is enabled.
+    if ( $options['expand_shortcodes'] == '1' ) {
+        $initial_content = do_shortcode( $initial_content );
+    }
+
+    // Second strip all HTML tags
+    $plain_text = wp_kses( $initial_content, array() );
+
+    // Strip properly registered shortcodes
+    $plain_text = strip_shortcodes( $plain_text );
+    // Also strip any shortcodes (For example, required for the removal of Visual Composer shortcodes)
+    $plain_text = preg_replace('#\[[^\]]+\]#', '', $plain_text);
+
+    // Late preprocessing filter. Content has no HTML tags and no properly registered shortcodes. Other shortcodes might still exist.
+    $plain_text_processed = apply_filters( 'amt_get_the_excerpt_plain_text', $plain_text, $post );
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $plain_text_processed, $group='add-meta-tags' );
+
+    return $plain_text_processed;
+}
+
+
 /**
  * Returns the post's excerpt.
  * This function was written in order to get the excerpt *outside* the loop
@@ -302,6 +341,8 @@ function amt_process_paged( $data ) {
  */
 function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250, $desc_min_length=150 ) {
     
+    $options = amt_get_options();
+
     // Non persistent object cache
     $amtcache_key = amt_get_amtcache_key('amt_cache_get_the_excerpt', $post);
     $amt_excerpt = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
@@ -313,20 +354,8 @@ function amt_get_the_excerpt( $post, $excerpt_max_len=300, $desc_avg_length=250,
 
         // Here we generate an excerpt from $post->post_content
 
-        // Early filter that lets dev define the post. This makes it possible to
-        // exclude specific parts of the post for the rest of the algorithm.
-        $initial_content = apply_filters( 'amt_get_the_excerpt_initial_content', $post->post_content, $post );
-
-        // First strip all HTML tags
-        $plain_text = wp_kses( $initial_content, array() );
-
-        // Strip properly registered shortcodes
-        $plain_text = strip_shortcodes( $plain_text );
-        // Also strip any shortcodes (For example, required for the removal of Visual Composer shortcodes)
-        $plain_text = preg_replace('#\[[^\]]+\]#', '', $plain_text);
-
-        // Late preprocessing filter. Content has no HTML tags and no properly registered shortcodes. Other shortcodes might still exist.
-        $plain_text_processed = apply_filters( 'amt_get_the_excerpt_plain_text', $plain_text, $post );
+        // Get clean content data
+        $plain_text_processed = amt_get_clean_post_content( $options, $post );
 
         // Get the initial text.
         // We use $excerpt_max_len characters of the text for the description.
@@ -2229,6 +2258,104 @@ function amt_get_the_hreflang($locale, $options) {
 }
 
 
+// Function that returns an array with data about the default image.
+function amt_get_default_image_data() {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_default_image_data');
+    $data = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $data !== false ) {
+        return $data;
+    }
+
+    // The default_image_url option accepts:
+    // 1. An attachment ID
+    // 2. Special notation about the default image:
+    //      URL[,WIDTHxHEIGHT][,TYPE]
+
+    $data = array(
+        'id'    => null,   // post ID of attachment
+        // The ID should be enough information to retrieve all attachment information
+        // Alternatively, if the ID is not set, at least the 'url' should be set.
+        'url'   => null,
+        'width' => null,
+        'height' => null,
+        'type'  => null,
+    );
+
+    $options = amt_get_options();
+
+    $value = $options["default_image_url"];
+
+    if ( ! empty($value) ) {
+
+        // First check if we have an ID
+        if ( is_numeric($value) ) {
+            $data['id'] = absint($value);
+
+        // Alternatively, check for URL
+        } else {
+
+            $parts = explode(',', $value);
+            $parts_count = count($parts);
+
+            // URL
+            if ( $parts_count == 1 ) {
+                // Retrieve URL
+                if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
+//var_dump($matches);
+                    $data['url'] = $matches[1];
+                }
+
+            // URL,WIDTHxHEIGHT
+            } elseif ( $parts_count == 2 ) {
+                // Retrieve URL
+                if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
+//var_dump($matches);
+                    $data['url'] = $matches[1];
+                    // Retrieve width and height
+                    if ( preg_match('#^([\d]+)x([\d]+)$#', $parts[1], $matches) ) {
+//var_dump($matches);
+                        $data['width'] = $matches[0][0];
+                        $data['height'] = $matches[0][1];
+                    }
+                }
+
+            // URL,WIDTHxHEIGHT,TYPE
+            } elseif ( $parts_count == 3 ) {
+                // Retrieve URL
+                if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
+//var_dump($matches);
+                    $data['url'] = $matches[1];
+                    // Retrieve width and height
+                    if ( preg_match('#^([\d]+)x([\d]+)$#', $parts[1], $matches) ) {
+//var_dump($matches);
+                        $data['width'] = $matches[0][0];
+                        $data['height'] = $matches[0][1];
+                        // Retrieve image type (expected: jpg/jpeg/png/gif etc)
+                        if ( preg_match('#^(jpe?g|png|gif|bmp)$#', $parts[2], $matches) ) {
+//var_dump($matches);
+                            $data['type'] = 'image/' . $matches[1];
+                        }
+                    }
+                }
+            }
+
+        }
+
+    }
+
+    // Allow filtering
+    $data = apply_filters('amt_default_image_data', $data);
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $data, $group='add-meta-tags' );
+
+    return $data;
+}
+
+
 // Returns the default Twitter Card type
 function amt_get_default_twitter_card_type($options) {
     $default = 'summary';
@@ -2422,6 +2549,22 @@ function amt_metadata_get_audio_limit($options) {
 function amt_get_review_data( $post ) {
     // Get review information from custom field
     $data = amt_get_post_meta_express_review( $post->ID );
+    //
+    // REVIEW_AMPERSAND_NOTE
+    //
+    // Note about conversion of ampersand:
+    // Data is returned with & converted to &amp; by amt_get_post_meta_express_review().
+    // This character mainly exists in sameAs URLs  (TODO: Find better replacement using preg_replace to spacifically target sameAs attributes)
+    // The problem is that ';' is interpretted as a comment in the INI specification,
+    // so parse_ini_string() strips part of the URL, which is wrong.
+    // Here we convert &amp; to & and leave it as is in the generated review data.
+    // To convert it back to &amp; after parse_ini_string() add something like:
+    //     $value = str_replace('&', '&amp;', $value);
+    // inside the foreach loop below.
+    //
+    //var_dump($data);
+    $data = str_replace('&amp;', '&', $data);
+    //var_dump($data);
     if ( empty($data) ) {
         return;
     }
@@ -3641,8 +3784,8 @@ function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_bl
     }
 
     // Content and stats
-    $post_content = strtolower( strip_shortcodes( strip_tags( $post->post_content ) ) );
-    $post_content = preg_replace('#\[[^\]]+\]#', '', $post_content);
+    // Post content
+    $post_content = strtolower( amt_get_clean_post_content( $options, $post ) );
     $post_content_length = strlen($post_content);
     //var_dump($post_content);
     // Total words
@@ -3692,11 +3835,17 @@ function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_bl
     //var_dump($post_url);
 
     // Description
-    $description = strtolower( preg_replace('#^.*content="([^"]+)".*$#', '$1', $metadata_block_head['basic:description']) );
+    $description = '';
+    if ( array_key_exists( 'basic:description', $metadata_block_head ) ) {
+        $description = strtolower( preg_replace('#^.*content="([^"]+)".*$#', '$1', $metadata_block_head['basic:description']) );
+    }
     //var_dump($description);
     // Keywords
-    $keywords_content = strtolower( preg_replace('#^.*content="([^"]+)".*$#', '$1', $metadata_block_head['basic:keywords']) );
-    $keywords = explode( ',', str_replace(', ', ',', $keywords_content) );
+    $keywords = array();
+    if ( array_key_exists( 'basic:keywords', $metadata_block_head ) ) {
+        $keywords_content = strtolower( preg_replace('#^.*content="([^"]+)".*$#', '$1', $metadata_block_head['basic:keywords']) );
+        $keywords = explode( ',', str_replace(', ', ',', $keywords_content) );
+    }
     //var_dump($keywords);
 
     // Keyword matching pattern
@@ -3722,28 +3871,40 @@ function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_bl
 
     $BR = PHP_EOL;
 
-    $output = $default_text . $BR . $BR;
-    //$output .= $BR . '<span class="">Text analysis</span>' . $BR;
-
-    $output .= 'Metadata Overview' . $BR;
-    $output .= '================='. $BR;
-
-    //$output .= 'This overview has been generated by the Add-Meta-Tags plugin for statistical and' . $BR;
-    //$output .= 'informational purposes only. Please do not modify or base your work upon this report.' . $BR . $BR;
-    $output .= 'NOTICE: Add-Meta-Tags does not provide SEO advice and does not rate your content.' . $BR;
-    $output .= 'This <a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Overview">overview</a> has been generated for statistical and informational purposes only.' . $BR;
-    //$output .= '<a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/FAQ#Is-Add-Meta-Tags-an-SEO-plugin">Read more</a> about the mentality upon which the development of this plugin has been based.' . $BR;
-    //$output .= 'Please use this statistical information to identify keyword overstuffing' . $BR;
-    //$output .= 'and stay away from following any patterns or being bound by the numbers.' . $BR . $BR;
-
-    if ( $use_keywords ) {
-        $output .= $BR . sprintf('This overview has been based on post keywords, because the Custom Field \'<em>%s</em>\' could not be found.', $topic_keywords_field_name) . $BR . $BR;
+    if ( $options['review_mode_omit_notices'] == '0' ) {
+        $output = $default_text . $BR . $BR;
+        //$output .= $BR . '<span class="">Text analysis</span>' . $BR;
     } else {
-        $output .= $BR . sprintf('This overview has been based on <em>topic keywords</em> retrieved from the Custom Field \'<em>%s</em>\'.', $topic_keywords_field_name) . $BR . $BR;
+        $output = '';
     }
 
-    $output .= 'Keyword Analysis' . $BR;
-    $output .= '----------------' . $BR;
+    if ( $options['review_mode_omit_notices'] == '0' ) {
+
+        $output .= 'Metadata Overview' . $BR;
+        $output .= '================='. $BR;
+
+        //$output .= 'This overview has been generated by the Add-Meta-Tags plugin for statistical and' . $BR;
+        //$output .= 'informational purposes only. Please do not modify or base your work upon this report.' . $BR . $BR;
+        $output .= 'NOTICE: Add-Meta-Tags does not provide SEO advice and does not rate your content.' . $BR;
+        $output .= 'This <a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/Metadata_Overview">overview</a> has been generated for statistical and informational purposes only.' . $BR . $BR;
+        //$output .= '<a target="_blank" href="http://www.codetrax.org/projects/wp-add-meta-tags/wiki/FAQ#Is-Add-Meta-Tags-an-SEO-plugin">Read more</a> about the mentality upon which the development of this plugin has been based.' . $BR;
+        //$output .= 'Please use this statistical information to identify keyword overstuffing' . $BR;
+        //$output .= 'and stay away from following any patterns or being bound by the numbers.' . $BR . $BR;
+
+    }
+
+    if ( $use_keywords ) {
+        $output .= sprintf('This overview has been based on post keywords, because the Custom Field \'<em>%s</em>\' could not be found.', $topic_keywords_field_name) . $BR;
+    } else {
+        $output .= sprintf('This overview has been based on <em>topic keywords</em> retrieved from the Custom Field \'<em>%s</em>\'.', $topic_keywords_field_name) . $BR;
+    }
+
+    if ( $options['review_mode_omit_notices'] == '0' ) {
+        $output .= 'Keyword Analysis' . $BR;
+        $output .= '----------------' . $BR;
+    } else {
+        $output .= $BR;
+    }
 
     $output .= '<table class="amt-ht-table">';
     $output .= '<tr> <th>Topic Keyword</th> <th>Content</th> <th>Description</th> <th>Keywords</th> <th>Post Title</th> <th>HTML title</th> <th>Metadata titles</th> <th>Post URL</th> </tr>';
@@ -3824,27 +3985,31 @@ function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_bl
     $output .= '</table>' . $BR;
 
 
-    // Keyword Distribution Graph
+    // Topic Keywords Distribution Graph
 
-    $output .= 'Keyword Distribution Graph' . $BR;
-    $output .= '--------------------------'. $BR;
+    if ( $options['review_mode_omit_notices'] == '0' ) {
+        $output .= 'Topic Keywords Distribution Graph' . $BR;
+        $output .= '---------------------------------'. $BR;
 
-    $output .= 'The following text based graph shows how the <em>topic keywords</em> are distributed within your content.'. $BR;
-    $output .= 'You can use it to identify incidents of keyword overstuffing.'. $BR . $BR;
+        $output .= 'The following text based graph shows how the <em>topic keywords</em> are distributed within your content.'. $BR;
+        $output .= 'You can use it to identify incidents of keyword overstuffing.'. $BR . $BR;
+    }
 
     //$output .= $BR . $BR;
     $total_bars = 39;   // zero based
     $step = $post_content_length / $total_bars;
 
+    // Debug
     //$output .= $BR . $post_content_length . '  ' . $step . $BR;
 
     $max_weight = null;
     $weights = array();
+    // Reset weights
     for ($x = 0; $x <= $total_bars; $x++) {
         $weights[$x] = 1;
     }
     foreach ($topic_keywords as $topic_keyword) {
-        // ALTERNATIVE: use preg_match_all with PREG_OFFSET_CAPTURE -- http://php.net/manual/en/function.preg-match-all.php
+        // Use preg_match_all with PREG_OFFSET_CAPTURE -- http://php.net/manual/en/function.preg-match-all.php
         $topic_keyword_occurrences = preg_match_all( sprintf($keyword_matching_pattern, $topic_keyword), $post_content, $matches, PREG_OFFSET_CAPTURE );
         //var_dump($matches);
         if ( ! empty($topic_keyword_occurrences) ) {
@@ -3862,14 +4027,10 @@ function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_bl
     }
 
     //var_dump($weights);
-    //for ($x = $max_weight - 1; $x >= 0; $x--) { // ALTBASELINE: for * based baseline
     for ($x = $max_weight - 1; $x >= 1; $x--) {
         $line = '';
         for ($y = 0; $y <= $total_bars; $y++) {
-            if ($x == 0) {
-                // ALTBASELINE: currently not used
-                $line .= '*';   // base line
-            } elseif ($weights[$y] > $x) {
+            if ($weights[$y] > $x) {
                 $line .= '#';
             } else {
                 $line .= ' ';
@@ -3877,20 +4038,27 @@ function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_bl
         }
         $output .= $line . $BR;
     }
-    // ALTBASELINE: currently this text based ruler is used.
+    // Currently this text based ruler is used as base line.
     $output .= str_repeat('---------+', (($total_bars + 1) / 10)) . $BR;
 
-    $output .= $BR . '<code>#</code>: indicates a single occurrence of a <em>topic keyword</em>.'. $BR;
+    if ( $options['review_mode_omit_notices'] == '0' ) {
+        $output .= $BR . '<code>#</code>: indicates a single occurrence of a <em>topic keyword</em>.' . $BR;
+    } else {
+        $output .= $BR;
+    }
 
 
     // Stats and scores by algos provided by the word-statistics-plugin by FD
     if ( function_exists('wordstats_words') ) {
 
         // Readability Tests
-        $output .= $BR . 'Readability Scores and Text Statistics' . $BR;
-        $output .=       '--------------------------------------' . $BR;
 
-        $output .= 'These readability scores and text statistics are based on algorithms provided by the <em>FD Word Statistics Plugin</em>.' . $BR . $BR;
+        if ( $options['review_mode_omit_notices'] == '0' ) {
+            $output .= $BR . 'Readability Scores and Text Statistics' . $BR;
+            $output .=       '--------------------------------------' . $BR;
+
+            $output .= 'These readability scores and text statistics are based on algorithms provided by the <em>FD Word Statistics Plugin</em>.' . $BR . $BR;
+        }
 
         if ( function_exists('wordstats_words') ) {
             $output .= sprintf(' &#9679; Total words: <strong>%d</strong>', wordstats_words($post_content) ) . $BR;
@@ -3911,8 +4079,10 @@ function amt_metadata_analysis($default_text, $metadata_block_head, $metadata_bl
         $output .= $BR;
 
     } else {
-        $output .= $BR . $BR . 'Note: There is experimental support for <em>FD Word Statistics Plugin</em>.';
-        $output .= $BR . 'If installed, you can get some readability scores and text statistics here.' . $BR . $BR;
+        if ( $options['review_mode_omit_notices'] == '0' ) {
+            $output .= $BR . $BR . 'Note: There is experimental support for <em>FD Word Statistics Plugin</em>.';
+            $output .= $BR . 'If installed, you can get some readability scores and text statistics here.' . $BR . $BR;
+        }
     }
 
     return $output;
