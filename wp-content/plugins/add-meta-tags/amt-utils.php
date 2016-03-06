@@ -999,7 +999,13 @@ function amt_get_metadata_metabox_permissions() {
         'image_url_box_capability' => 'edit_posts',
         'content_locale_box_capability' => 'edit_posts',
         'express_review_box_capability' => 'edit_posts',
-        'referenced_list_box_capability' => 'edit_posts'
+        'referenced_list_box_capability' => 'edit_posts',
+        // Term meta
+        'term_full_metatags_box_capability' => 'edit_published_posts',
+        'term_image_url_box_capability' => 'edit_published_posts',
+        // User meta
+        'user_full_metatags_box_capability' => 'edit_published_posts',
+        'user_image_url_box_capability' => 'edit_published_posts',
     );
     // Allow filtering of the metabox permissions
     $metabox_permissions = apply_filters( 'amt_metadata_metabox_permissions', $metabox_permissions );
@@ -1026,16 +1032,30 @@ function amt_get_post_custom_field_names() {
 }
 
 /**
- * Helper function that returns an array of the supported user contactinfos.
+ * Helper function that returns an array of the supported term meta
  */
-function amt_get_user_contactinfo_field_names() {
+function amt_get_term_custom_field_names() {
     return array(
+        '_amt_term_full_metatags',
+        '_amt_term_image_url',
+    );
+}
+
+/**
+ * Helper function that returns an array of the supported user meta fields.
+ */
+function amt_get_user_custom_field_names() {
+    return array(
+        // Contact methods
         'amt_facebook_author_profile_url',
         'amt_facebook_publisher_profile_url',
         'amt_googleplus_author_profile_url',
         'amt_googleplus_publisher_profile_url',
         'amt_twitter_author_username',
         'amt_twitter_publisher_username',
+        // User Meta
+        '_amt_user_full_metatags',
+        '_amt_user_image_url',
     );
 }
 
@@ -1248,48 +1268,12 @@ function amt_get_post_meta_newskeywords($post_id) {
 }
 
 
-/**
- * Helper function that returns the value of the custom field that contains
- * the per-post full metatags.
- * The default field name is ``_amt_full_metatags``.
- * No need to migrate from older field name.
- */
-function OLD_amt_get_post_meta_full_metatags($post_id) {
-    $options = get_option('add_meta_tags_opts');
-    if ( ! is_array($options) ) {
-        return '';
-    } elseif ( ! array_key_exists( 'metabox_enable_full_metatags', $options) ) {
-        return '';
-    } elseif ( $options['metabox_enable_full_metatags'] == '0' ) {
-        return '';
-    }
-    // Internal fields - order matters
-    $supported_custom_fields = array( '_amt_full_metatags' );
-    // External fields - Allow filtering
-    $external_fields = array();
-    $external_fields = apply_filters( 'amt_external_full_metatags_fields', $external_fields, $post_id );
-    // Merge external fields to our supported custom fields
-    $supported_custom_fields = array_merge( $supported_custom_fields, $external_fields );
-
-    // Get an array of all custom fields names of the post
-    $custom_fields = get_post_custom_keys( $post_id );
-    if ( empty( $custom_fields ) ) {
-        // Just return an empty string if no custom fields have been associated with this content.
-        return '';
-    }
-
-    // Try our fields
-    foreach( $supported_custom_fields as $sup_field ) {
-        // If such a field exists in the db, return its content as the full metatags.
-        if ( in_array( $sup_field, $custom_fields ) ) {
-            return get_post_meta( $post_id, $sup_field, true );
-        }
-    }
-
-    //Return empty string if all fail
-    return '';
-}
-
+//
+// Helper function that returns the value of the custom field that contains
+// the per-post full metatags.
+// The default field name is ``_amt_full_metatags``.
+// No need to migrate from older field name.
+//
 function amt_get_post_meta_full_metatags($post_id) {
 
     // Non persistent object cache
@@ -1534,6 +1518,138 @@ function amt_get_post_meta_referenced_list($post_id) {
 }
 
 
+//
+// Helper functions for the retrieval of term meta
+//
+
+// Helper function that returns the value of the custom field that contains
+// the per-term full metatags.
+// The default field name is ``_amt_term_full_metatags``.
+// No need to migrate from older field name.
+function amt_get_term_meta_full_metatags($term_id) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_term_meta_full_metatags', $term_id);
+    $field_value = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $field_value !== false ) {
+        return $field_value;
+    }
+
+    $options = amt_get_options();
+
+    $field_name = '_amt_term_full_metatags';
+    $field_value = '';
+
+    if ( $options['metabox_term_enable_full_metatags'] == '1' ) {
+        $field_value = get_term_meta( $term_id, $field_name, true );
+    }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $field_value, $group='add-meta-tags' );
+
+    return $field_value;
+}
+
+
+//
+// Helper function that returns the value of the custom field that contains
+// a global image override URL.
+// The default field name for the 'global image override URL' is ``_amt_term_image_url``.
+// No need to migrate from older field name.
+//
+function amt_get_term_meta_image_url($term_id) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_term_meta_image_url', $term_id);
+    $field_value = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $field_value !== false ) {
+        return $field_value;
+    }
+
+    $options = amt_get_options();
+
+    $field_name = '_amt_term_image_url';
+    $field_value = '';
+
+    if ( $options['metabox_term_enable_image_url'] == '1' ) {
+        $field_value = get_term_meta( $term_id, $field_name, true );
+    }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $field_value, $group='add-meta-tags' );
+
+    return $field_value;
+}
+
+
+//
+// Helper functions for the retrieval of user meta
+//
+
+// Helper function that returns the value of the custom field that contains
+// the per-user full metatags.
+// The default field name is ``_amt_user_full_metatags``.
+// No need to migrate from older field name.
+function amt_get_user_meta_full_metatags($user_id) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_user_meta_full_metatags', $user_id);
+    $field_value = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $field_value !== false ) {
+        return $field_value;
+    }
+
+    $options = amt_get_options();
+
+    $field_name = '_amt_user_full_metatags';
+    $field_value = '';
+
+    if ( $options['metabox_user_enable_full_metatags'] == '1' ) {
+        $field_value = get_user_meta( $user_id, $field_name, true );
+    }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $field_value, $group='add-meta-tags' );
+
+    return $field_value;
+}
+
+
+//
+// Helper function that returns the value of the custom field that contains
+// a global image override URL.
+// The default field name for the 'global image override URL' is ``_amt_user_image_url``.
+// No need to migrate from older field name.
+//
+function amt_get_user_meta_image_url($user_id) {
+
+    // Non persistent object cache
+    $amtcache_key = amt_get_amtcache_key('amt_cache_get_user_meta_image_url', $user_id);
+    $field_value = wp_cache_get( $amtcache_key, $group='add-meta-tags' );
+    if ( $field_value !== false ) {
+        return $field_value;
+    }
+
+    $options = amt_get_options();
+
+    $field_name = '_amt_user_image_url';
+    $field_value = '';
+
+    if ( $options['metabox_user_enable_image_url'] == '1' ) {
+        $field_value = get_user_meta( $user_id, $field_name, true );
+    }
+
+    // Non persistent object cache
+    // Cache even empty
+    wp_cache_add( $amtcache_key, $field_value, $group='add-meta-tags' );
+
+    return $field_value;
+}
+
+
 /**
  * Helper function that returns an array of objects attached to the provided
  * $post object.
@@ -1701,9 +1817,40 @@ function amt_get_posts_page_id() {
 }
 
 
-/**
- * Returns an array with URLs to players for some embedded media.
- */
+//
+//function amt_store_oembed_response( $return, $data, $url ) {
+//    /**
+//     * Filter the returned oEmbed HTML.
+//     *
+//     * Use this filter to add support for custom data types, or to filter the result.
+//     *
+//     * @since 2.9.0
+//     *
+//     * @param string $return The returned oEmbed HTML.
+//     * @param object $data   A data object result from an oEmbed provider.
+//     * @param string $url    The URL of the content to be embedded.
+//     */
+//return apply_filters( 'oembed_dataparse', $return, $data, $url );
+//}
+//add_filter('oembed_dataparse', 'amt_store_oembed_response', 9999, 3);
+//
+// SEE:
+// * http://wordpress.stackexchange.com/questions/70752/featured-image-of-video-from-oembed
+// * http://wordpress.stackexchange.com/questions/19500/oembed-thumbnails-and-wordpress?lq=1
+// * http://wordpress.stackexchange.com/questions/114656/detecting-embed-urls-within-post-content
+// * http://wordpress.stackexchange.com/a/74026
+// * http://wordpress.stackexchange.com/a/180169
+// * http://wordpress.stackexchange.com/questions/78140/video-playing-from-featured-image?lq=1
+// * http://wordpress.stackexchange.com/questions/73996/how-to-replace-youtube-videos-with-a-click-to-play-thumbnail?lq=1
+// GOOD FOR OWN IMPLEMENTATION:
+// * http://wordpress.stackexchange.com/questions/78140/video-playing-from-featured-image?lq=1
+// * http://wordpress.stackexchange.com/questions/25808/setting-a-posts-featured-image-from-an-embedded-youtube-video?rq=1
+// * http://wordpress.stackexchange.com/questions/70752/featured-image-of-video-from-oembed
+//
+
+//
+// Returns an array with URLs to players for some embedded media.
+//
 function amt_get_embedded_media( $post ) {
 
     // Non persistent object cache
@@ -1776,10 +1923,24 @@ function amt_get_embedded_media( $post ) {
                 continue;
             }
 
-            // Get image info from the cached HTML
+            // Get video ID from the video URL
             preg_match( '#.*v=([a-zA-Z0-9_-]+)#', $youtube_video_url, $video_url_info );
             //var_dump($video_url_info);
             $youtube_video_id = $video_url_info[1];
+
+            // Get data from the cached HTML
+            //var_dump($cache);
+            preg_match( '#.* (?:width="([\d]+)") (?:height="([\d]+)") .*#', $cache, $media_info );
+            //var_dump($media_info);
+
+            $player_width = '640';
+            if ( isset($media_info[1]) ) {
+                $player_width = $media_info[1];
+            }
+            $player_height = '480';
+            if ( isset($media_info[2]) ) {
+                $player_height = $media_info[2];
+            }
 
             $item = array(
                 'type' => 'youtube',
@@ -1793,8 +1954,8 @@ function amt_get_embedded_media( $post ) {
                 // http://img.youtube.com/vi/rr6H-MJCNw0/hqdefault.jpg  480x360 (same as 0.jpg)
                 // http://img.youtube.com/vi/rr6H-MJCNw0/sddefault.jpg  640x480
                 // See more here: http://stackoverflow.com/a/2068371
-                'width' => apply_filters( 'amt_oembed_youtube_player_width', '640' ),
-                'height' => apply_filters( 'amt_oembed_youtube_player_height', '480' ),
+                'width' => $player_width,
+                'height' => $player_height,
             );
             //array_unshift( $embedded_media_urls['videos'], $item );
             array_push( $embedded_media_urls['videos'], $item );
@@ -1835,18 +1996,32 @@ function amt_get_embedded_media( $post ) {
                 continue;
             }
 
-            // Get image info from the cached HTML
+            // Get video ID from the URL
             preg_match( '#.*vimeo.com\/(\d+)#', $vimeo_video_url, $video_url_info );
             //var_dump($video_url_info);
             $vimeo_video_id = $video_url_info[1];
+
+            // Get data from the cached HTML
+            //var_dump($cache);
+            preg_match( '#.* (?:width="([\d]+)") (?:height="([\d]+)") .*#', $cache, $media_info );
+            //var_dump($media_info);
+
+            $player_width = '640';
+            if ( isset($media_info[1]) ) {
+                $player_width = $media_info[1];
+            }
+            $player_height = '480';
+            if ( isset($media_info[2]) ) {
+                $player_height = $media_info[2];
+            }
 
             $item = array(
                 'type' => 'vimeo',
                 'page' => 'https://vimeo.com/' . $vimeo_video_id,
                 'player' => 'https://player.vimeo.com/video/' . $vimeo_video_id,
                 'thumbnail' => apply_filters( 'amt_oembed_vimeo_image_preview', '', $vimeo_video_id ),
-                'width' => apply_filters( 'amt_oembed_vimeo_player_width', '640' ),
-                'height' => apply_filters( 'amt_oembed_vimeo_player_height', '480' ),
+                'width' => $player_width,
+                'height' => $player_height,
             );
             array_push( $embedded_media_urls['videos'], $item );
         }
@@ -1884,18 +2059,32 @@ function amt_get_embedded_media( $post ) {
                 continue;
             }
 
-            // Get id info from the cached HTML
+            // Get id info from the URL
             preg_match( '#.*vine.co\/v\/([a-zA-Z0-9_-]+)#', $vine_video_url, $video_url_info );
             //var_dump($video_url_info);
             $vine_video_id = $video_url_info[1];
+
+            // Get data from the cached HTML
+            //var_dump($cache);
+            preg_match( '#.* (?:width="([\d]+)") (?:height="([\d]+)") .*#', $cache, $media_info );
+            //var_dump($media_info);
+
+            $player_width = '600';
+            if ( isset($media_info[1]) ) {
+                $player_width = $media_info[1];
+            }
+            $player_height = '600';
+            if ( isset($media_info[2]) ) {
+                $player_height = $media_info[2];
+            }
 
             $item = array(
                 'type' => 'vine',
                 'page' => 'https://vine.co/v/' . $vine_video_id,
                 'player' => 'https://vine.co/v/' . $vine_video_id . '/embed/simple',
                 'thumbnail' => apply_filters( 'amt_oembed_vine_image_preview', '', $vine_video_id ),
-                'width' => apply_filters( 'amt_oembed_vine_player_width', '600' ),
-                'height' => apply_filters( 'amt_oembed_vine_player_height', '600' ),
+                'width' => $player_width,
+                'height' => $player_height,
             );
             array_push( $embedded_media_urls['videos'], $item );
         }
@@ -1913,6 +2102,9 @@ function amt_get_embedded_media( $post ) {
     // - https://soundcloud.com/USER_ID/TRACK_ID
     // player:
     // https://w.soundcloud.com/player/?url=https://api.soundcloud.com/tracks/117455833
+    //
+    // ALSO SEE: https://developers.soundcloud.com/docs/api/reference#tracks
+    //
     $pattern = '#https?:\/\/(?:www.)?soundcloud.com\/[^/]+\/[a-zA-Z0-9_-]+#i';
     preg_match_all( $pattern, $post_body, $matches );
     //var_dump($matches);
@@ -1940,13 +2132,26 @@ function amt_get_embedded_media( $post ) {
                 continue;
             }
 
+            // Get data from the cached HTML
+            preg_match( '#.* (?:width="([\d]+)") (?:height="([\d]+)") .*#', $cache, $soundcloud_clip_info );
+            //var_dump($soundcloud_clip_info);
+
+            $player_width = '640';
+            if ( isset($soundcloud_clip_info[1]) ) {
+                $player_width = $soundcloud_clip_info[1];
+            }
+            $player_height = '320';
+            if ( isset($soundcloud_clip_info[2]) ) {
+                $player_height = $soundcloud_clip_info[2];
+            }
+
             $item = array(
                 'type' => 'soundcloud',
                 'page' => $soundcloud_url,
                 'player' => 'https://w.soundcloud.com/player/?url=' . $soundcloud_url,
                 'thumbnail' => apply_filters( 'amt_oembed_soundcloud_image_preview', '', $soundcloud_url ),
-                'width' => apply_filters( 'amt_oembed_soundcloud_player_width', '640' ),
-                'height' => apply_filters( 'amt_oembed_soundcloud_player_height', '164' ),
+                'width' => $player_width,
+                'height' => $player_height,
             );
             array_push( $embedded_media_urls['sounds'], $item );
         }
@@ -2258,6 +2463,78 @@ function amt_get_the_hreflang($locale, $options) {
 }
 
 
+//
+// Returns array with attributes
+// or NULL
+function amt_get_image_attributes_array( $notation ) {
+    // Special notation about the default image:
+    //      URL[,WIDTHxHEIGHT]
+
+    if ( empty( $notation ) ) {
+        return;
+    }
+
+    $data = array(
+        'id'    => null,   // This function always returns a null attachment id.
+        // Filled from special notation
+        'url'   => null,
+        'width' => null,
+        'height' => null,
+        'type'  => null,
+    );
+
+    $parts = explode(',', $notation);
+    $parts_count = count($parts);
+
+    // URL
+    if ( $parts_count == 1 ) {
+
+        // Retrieve URL
+        if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
+            //var_dump($matches);
+            $data['url'] = $matches[1];
+
+            // Also try to determine the image type
+            $extension = substr( $data['url'], strrpos($data['url'], '.') + 1);
+            if ( $extension == 'jpg' ) {
+                $extension = 'jpeg';
+            }
+            if ( in_array( $extension, array('jpeg', 'png', 'gif', 'bmp') ) ) {
+                $data['type'] = 'image/' . $extension;
+            }
+        }
+
+    // URL,WIDTHxHEIGHT
+    } elseif ( $parts_count == 2 ) {
+
+        // Retrieve URL
+        if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
+            //var_dump($matches);
+            $data['url'] = $matches[1];
+
+            // Also try to determine the image type
+            $extension = substr( $data['url'], strrpos($data['url'], '.') + 1);
+            if ( $extension == 'jpg' ) {
+                $extension = 'jpeg';
+            }
+            if ( in_array( $extension, array('jpeg', 'png', 'gif', 'bmp') ) ) {
+                $data['type'] = 'image/' . $extension;
+            }
+
+            // Retrieve width and height
+            if ( preg_match('#^([\d]+)x([\d]+)$#', $parts[1], $matches) ) {
+                //var_dump($matches);
+                $data['width'] = $matches[1];
+                $data['height'] = $matches[2];
+            }
+        }
+
+    }
+
+    return $data;
+}
+
+
 // Function that returns an array with data about the default image.
 function amt_get_default_image_data() {
 
@@ -2271,7 +2548,7 @@ function amt_get_default_image_data() {
     // The default_image_url option accepts:
     // 1. An attachment ID
     // 2. Special notation about the default image:
-    //      URL[,WIDTHxHEIGHT][,TYPE]
+    //      URL[,WIDTHxHEIGHT]
 
     $data = array(
         'id'    => null,   // post ID of attachment
@@ -2293,53 +2570,9 @@ function amt_get_default_image_data() {
         if ( is_numeric($value) ) {
             $data['id'] = absint($value);
 
-        // Alternatively, check for URL
+        // Alternatively, check for special notation
         } else {
-
-            $parts = explode(',', $value);
-            $parts_count = count($parts);
-
-            // URL
-            if ( $parts_count == 1 ) {
-                // Retrieve URL
-                if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
-//var_dump($matches);
-                    $data['url'] = $matches[1];
-                }
-
-            // URL,WIDTHxHEIGHT
-            } elseif ( $parts_count == 2 ) {
-                // Retrieve URL
-                if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
-//var_dump($matches);
-                    $data['url'] = $matches[1];
-                    // Retrieve width and height
-                    if ( preg_match('#^([\d]+)x([\d]+)$#', $parts[1], $matches) ) {
-//var_dump($matches);
-                        $data['width'] = $matches[0][0];
-                        $data['height'] = $matches[0][1];
-                    }
-                }
-
-            // URL,WIDTHxHEIGHT,TYPE
-            } elseif ( $parts_count == 3 ) {
-                // Retrieve URL
-                if ( preg_match('#^(https?://.+)$#', $parts[0], $matches) ) {
-//var_dump($matches);
-                    $data['url'] = $matches[1];
-                    // Retrieve width and height
-                    if ( preg_match('#^([\d]+)x([\d]+)$#', $parts[1], $matches) ) {
-//var_dump($matches);
-                        $data['width'] = $matches[0][0];
-                        $data['height'] = $matches[0][1];
-                        // Retrieve image type (expected: jpg/jpeg/png/gif etc)
-                        if ( preg_match('#^(jpe?g|png|gif|bmp)$#', $parts[2], $matches) ) {
-//var_dump($matches);
-                            $data['type'] = 'image/' . $matches[1];
-                        }
-                    }
-                }
-            }
+            $data = amt_get_image_attributes_array( $value );
 
         }
 
